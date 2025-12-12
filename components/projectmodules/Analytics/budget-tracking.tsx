@@ -35,7 +35,7 @@ import {
 
 interface BudgetItem {
   id: string
-  category: "above-line" | "below-line" | "post-production" | "other"
+  category: string
   department: string
   item: string
   budgeted: number
@@ -83,7 +83,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
   const budgetItems: BudgetItem[] = [
     {
       id: "1",
-      category: "above-line",
+      category: "N", // Talent
       department: "Talent",
       item: "Lead Actor - Emma Stone",
       budgeted: 2000000,
@@ -99,7 +99,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
     },
     {
       id: "2",
-      category: "above-line",
+      category: "N", // Talent
       department: "Talent",
       item: "Lead Actor - Michael Chen",
       budgeted: 1500000,
@@ -114,7 +114,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
     },
     {
       id: "3",
-      category: "below-line",
+      category: "I", // Equipment
       department: "Camera",
       item: "Camera Equipment Rental",
       budgeted: 150000,
@@ -130,7 +130,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
     },
     {
       id: "4",
-      category: "below-line",
+      category: "D", // Location
       department: "Locations",
       item: "Downtown Loft Studio",
       budgeted: 75000,
@@ -145,7 +145,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
     },
     {
       id: "5",
-      category: "below-line",
+      category: "B", // Shooe/Crew
       department: "Crew",
       item: "Director of Photography",
       budgeted: 200000,
@@ -160,7 +160,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
     },
     {
       id: "6",
-      category: "post-production",
+      category: "K", // Misc/Post
       department: "Editorial",
       item: "Post-Production Suite",
       budgeted: 120000,
@@ -175,7 +175,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
     },
     {
       id: "7",
-      category: "below-line",
+      category: "D", // Location/Travel
       department: "Transportation",
       item: "Vehicle Rentals",
       budgeted: 45000,
@@ -190,7 +190,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
     },
     {
       id: "8",
-      category: "below-line",
+      category: "B", // Production - catering is technically craft service often in B or meals in C/N
       department: "Catering",
       item: "Craft Services",
       budgeted: 35000,
@@ -360,9 +360,8 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
   const renderBudgetCard = (item: BudgetItem, isExpanded: boolean) => (
     <div
       key={item.id}
-      className={`bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 ${
-        isExpanded ? "row-span-2" : ""
-      }`}
+      className={`bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 ${isExpanded ? "row-span-2" : ""
+        }`}
     >
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
@@ -398,9 +397,8 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
           <div className="flex justify-between">
             <span className="text-white/70">Remaining:</span>
             <span
-              className={`font-medium ${
-                item.remaining < 0 ? "text-red-400" : item.remaining > 0 ? "text-green-400" : "text-white"
-              }`}
+              className={`font-medium ${item.remaining < 0 ? "text-red-400" : item.remaining > 0 ? "text-green-400" : "text-white"
+                }`}
             >
               {formatCurrency(item.remaining)}
             </span>
@@ -589,10 +587,9 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
               className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50"
             >
               <option value="all">All Categories</option>
-              <option value="above-line">Above-the-Line</option>
-              <option value="below-line">Below-the-Line</option>
-              <option value="post-production">Post-Production</option>
-              <option value="other">Other</option>
+              {Array.from(new Set(budgetItems.map(i => i.category))).sort().map(cat => (
+                <option key={cat} value={cat}>Section {cat}</option>
+              ))}
             </select>
           </div>
           <select
@@ -612,25 +609,22 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
           <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1 border border-white/20">
             <button
               onClick={() => setViewMode("detailed")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "detailed" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "detailed" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <Grid3X3 className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("summary")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "summary" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "summary" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <BarChart3 className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("categories")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "categories" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "categories" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <PieChart className="h-4 w-4" />
             </button>
@@ -642,9 +636,8 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
                 <button
                   key={size}
                   onClick={() => setGridSize(size)}
-                  className={`px-2 py-1 rounded text-xs transition-colors ${
-                    gridSize === size ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-                  }`}
+                  className={`px-2 py-1 rounded text-xs transition-colors ${gridSize === size ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                    }`}
                 >
                   {size}
                 </button>
@@ -669,7 +662,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
             <h3 className="text-white font-medium mb-4">Budget by Category</h3>
             <div className="space-y-4">
-              {["above-line", "below-line", "post-production", "other"].map((category) => {
+              {Array.from(new Set(budgetItems.map(i => i.category))).sort().map((category) => {
                 const categoryItems = budgetItems.filter((item) => item.category === category)
                 const categoryBudget = categoryItems.reduce((sum, item) => sum + item.budgeted, 0)
                 const categorySpent = categoryItems.reduce((sum, item) => sum + item.actual, 0)
@@ -678,14 +671,13 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
                 return (
                   <div key={category}>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-white capitalize">{category.replace("-", " ")}</span>
+                      <span className="text-white capitalize">Section {category}</span>
                       <span className="text-white/70 text-sm">{categoryPercent.toFixed(1)}%</span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          categoryPercent > 100 ? "bg-red-500" : categoryPercent > 80 ? "bg-yellow-500" : "bg-green-500"
-                        }`}
+                        className={`h-2 rounded-full transition-all duration-300 ${categoryPercent > 100 ? "bg-red-500" : categoryPercent > 80 ? "bg-yellow-500" : "bg-green-500"
+                          }`}
                         style={{ width: `${Math.min(categoryPercent, 100)}%` }}
                       ></div>
                     </div>
@@ -727,7 +719,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
 
       {viewMode === "categories" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {["above-line", "below-line", "post-production", "other"].map((category) => {
+          {Array.from(new Set(budgetItems.map(i => i.category))).sort().map((category) => {
             const categoryItems = budgetItems.filter((item) => item.category === category)
             const categoryBudget = categoryItems.reduce((sum, item) => sum + item.budgeted, 0)
             const categorySpent = categoryItems.reduce((sum, item) => sum + item.actual, 0)
@@ -735,7 +727,7 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
 
             return (
               <div key={category} className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                <h3 className="text-white font-semibold mb-4 capitalize">{category.replace("-", " ")}</h3>
+                <h3 className="text-white font-semibold mb-4 capitalize">Section {category}</h3>
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-white mb-2">{formatCurrency(categorySpent)}</div>
@@ -743,9 +735,8 @@ export default function BudgetTracking({ searchQuery = "" }: { searchQuery?: str
                   </div>
                   <div className="w-full bg-white/20 rounded-full h-3">
                     <div
-                      className={`h-3 rounded-full transition-all duration-300 ${
-                        categoryPercent > 100 ? "bg-red-500" : categoryPercent > 80 ? "bg-yellow-500" : "bg-green-500"
-                      }`}
+                      className={`h-3 rounded-full transition-all duration-300 ${categoryPercent > 100 ? "bg-red-500" : categoryPercent > 80 ? "bg-yellow-500" : "bg-green-500"
+                        }`}
                       style={{ width: `${Math.min(categoryPercent, 100)}%` }}
                     ></div>
                   </div>

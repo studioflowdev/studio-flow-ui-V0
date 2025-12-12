@@ -28,7 +28,11 @@ import {
   ChevronUp,
   Copy,
   Trash2,
+  Eye,
+  EyeOff,
 } from "lucide-react"
+
+import { BUDGET_PRESETS } from "./budget-presets"
 
 interface BudgetLineItem {
   id: string
@@ -84,355 +88,295 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
   const [filterCategory, setFilterCategory] = useState("all")
   const [showVarianceOnly, setShowVarianceOnly] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [showZeroRows, setShowZeroRows] = useState<Set<string>>(new Set())
   const [aiPrompt, setAiPrompt] = useState("")
   const [isGeneratingEstimates, setIsGeneratingEstimates] = useState(false)
 
-  // Initialize budget data based on the PDF structure
+  // Recalculate category totals based on line items
+  const recalculateCategory = (category: BudgetCategory): BudgetCategory => {
+    const estimatedTotal = category.items.reduce((sum, item) => sum + item.estimatedTotal, 0)
+    const actualTotal = category.items.reduce((sum, item) => sum + item.actualTotal, 0)
+    const variance = actualTotal - estimatedTotal
+    const variancePercent = estimatedTotal > 0 ? (variance / estimatedTotal) * 100 : 0
+
+    return {
+      ...category,
+      estimatedTotal,
+      actualTotal,
+      variance,
+      variancePercent,
+    }
+  }
+
+  const initialBudgetDataConstants: BudgetCategory[] = [
+    {
+      id: "A",
+      name: "Pre-Production & Wrap",
+      code: "A",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-blue-500",
+      icon: FileText,
+      items: [],
+    },
+    {
+      id: "B",
+      name: "Shoot / Production Crew",
+      code: "B",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-green-500",
+      icon: Camera,
+      items: [],
+    },
+    {
+      id: "C",
+      name: "Casting",
+      code: "C",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-purple-500",
+      icon: Users,
+      items: [],
+    },
+    {
+      id: "D",
+      name: "Location & Travel",
+      code: "D",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-yellow-500",
+      icon: MapPin,
+      items: [],
+    },
+    {
+      id: "E",
+      name: "Props, Wardrobe, Animals",
+      code: "E",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-red-500",
+      icon: Palette,
+      items: [],
+    },
+    {
+      id: "F",
+      name: "Studio & Set Construction",
+      code: "F",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-orange-500",
+      icon: Settings,
+      items: [],
+    },
+    {
+      id: "G",
+      name: "Special Effects",
+      code: "G",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-red-600",
+      icon: Sparkles,
+      items: [],
+    },
+    {
+      id: "H",
+      name: "Art Department",
+      code: "H",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-pink-500",
+      icon: Palette,
+      items: [],
+    },
+    {
+      id: "I",
+      name: "Equipment Rental",
+      code: "I",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-indigo-500",
+      icon: Camera,
+      items: [],
+    },
+    {
+      id: "J",
+      name: "Film Stock & Lab",
+      code: "J",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-cyan-500",
+      icon: FileText,
+      items: [],
+    },
+    {
+      id: "K",
+      name: "Miscellaneous & Editorial",
+      code: "K",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-gray-500",
+      icon: Settings,
+      items: [],
+    },
+    {
+      id: "L",
+      name: "Director / Creative Fees",
+      code: "L",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-emerald-500",
+      icon: Users,
+      items: [],
+    },
+    {
+      id: "M",
+      name: "Insurance",
+      code: "M",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-blue-600",
+      icon: FileText,
+      items: [],
+    },
+    {
+      id: "N",
+      name: "Talent",
+      code: "N",
+      estimatedTotal: 0,
+      actualTotal: 0,
+      variance: 0,
+      variancePercent: 0,
+      color: "bg-rose-500",
+      icon: Users,
+      items: [],
+    },
+  ]
+
+  // Initialize budget data
   useEffect(() => {
+    // Check if we already have data for this project in our "V2" store (cache busting)
     if (MOCK_STORE[projectId]) {
-      setBudgetData(MOCK_STORE[projectId])
-      setExpandedCategories(new Set(["pre-production", "production"]))
-      generateAISuggestions(MOCK_STORE[projectId])
-      return
+      // If the data is "empty" (all zeros), we want to regenerate it anyway
+      // This covers the case where the user might have visited this project before we fixed the generator
+      const totalEst = MOCK_STORE[projectId].reduce((sum, cat) => sum + cat.estimatedTotal, 0)
+      if (totalEst > 0) {
+        setBudgetData(MOCK_STORE[projectId])
+        setExpandedCategories(new Set(["A", "B"]))
+        generateAISuggestions(MOCK_STORE[projectId])
+        return
+      }
     }
 
-    const initialBudgetData: BudgetCategory[] = [
-      {
-        id: "pre-production",
-        name: "Pre-Production & Wrap",
-        code: "A",
-        estimatedTotal: 40767,
-        actualTotal: 0,
-        variance: -40767,
-        variancePercent: -100,
-        color: "bg-blue-500",
-        icon: FileText,
-        items: [
-          {
-            id: "line_1",
-            lineNumber: 1,
-            category: "pre-production",
-            subcategory: "crew",
-            description: "Line Producer",
-            crew: 1,
-            days: 25,
-            rate: 400,
-            estimatedTotal: 10000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          {
-            id: "line_2",
-            lineNumber: 2,
-            category: "pre-production",
-            subcategory: "crew",
-            description: "Assistant Director",
-            crew: 1,
-            days: 5,
-            rate: 150,
-            estimatedTotal: 750,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          {
-            id: "line_3",
-            lineNumber: 3,
-            category: "pre-production",
-            subcategory: "crew",
-            description: "Dir. of Photography",
-            crew: 1,
-            days: 5,
-            rate: 400,
-            estimatedTotal: 2000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          // Add more pre-production items...
-        ],
-      },
-      {
-        id: "production",
-        name: "Production Shoot",
-        code: "B",
-        estimatedTotal: 320675,
-        actualTotal: 0,
-        variance: -320675,
-        variancePercent: -100,
-        color: "bg-green-500",
-        icon: Camera,
-        items: [
-          {
-            id: "line_51",
-            lineNumber: 51,
-            category: "production",
-            subcategory: "crew",
-            description: "Line Producer",
-            crew: 1,
-            days: 25,
-            rate: 800,
-            estimatedTotal: 20000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          {
-            id: "line_52",
-            lineNumber: 52,
-            category: "production",
-            subcategory: "crew",
-            description: "Assistant Director",
-            crew: 1,
-            days: 25,
-            rate: 350,
-            estimatedTotal: 8750,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          // Add more production items...
-        ],
-      },
-      {
-        id: "materials-expenses",
-        name: "Materials & Expenses",
-        code: "C",
-        estimatedTotal: 30400,
-        actualTotal: 0,
-        variance: -30400,
-        variancePercent: -100,
-        color: "bg-purple-500",
-        icon: Settings,
-        items: [
-          {
-            id: "line_101",
-            lineNumber: 101,
-            category: "materials-expenses",
-            subcategory: "transportation",
-            description: "Auto Rentals",
-            estimatedTotal: 2500,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          {
-            id: "line_102",
-            lineNumber: 102,
-            category: "materials-expenses",
-            subcategory: "travel",
-            description: "Air Fares (6 people x $550)",
-            crew: 6,
-            rate: 550,
-            estimatedTotal: 3300,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          // Add more materials & expenses items...
-        ],
-      },
-      {
-        id: "location-expenses",
-        name: "Location Expenses",
-        code: "D",
-        estimatedTotal: 119380,
-        actualTotal: 0,
-        variance: -119380,
-        variancePercent: -100,
-        color: "bg-yellow-500",
-        icon: MapPin,
-        items: [
-          {
-            id: "line_114",
-            lineNumber: 114,
-            category: "location-expenses",
-            subcategory: "fees",
-            description: "Location Fees",
-            estimatedTotal: 25000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          {
-            id: "line_115",
-            lineNumber: 115,
-            category: "location-expenses",
-            subcategory: "permits",
-            description: "Permits",
-            estimatedTotal: 10000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          // Add more location expenses...
-        ],
-      },
-      {
-        id: "props-wardrobe",
-        name: "Props/Wardrobe/Animals",
-        code: "E",
-        estimatedTotal: 75500,
-        actualTotal: 0,
-        variance: -75500,
-        variancePercent: -100,
-        color: "bg-red-500",
-        icon: Palette,
-        items: [
-          {
-            id: "line_140",
-            lineNumber: 140,
-            category: "props-wardrobe",
-            subcategory: "props",
-            description: "Prop Rental",
-            estimatedTotal: 2000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          {
-            id: "line_144",
-            lineNumber: 144,
-            category: "props-wardrobe",
-            subcategory: "vehicles",
-            description: "Picture Vehicles (6 destroyed vehicles)",
-            crew: 6,
-            estimatedTotal: 65000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-          },
-          // Add more props/wardrobe items...
-        ],
-      },
-      {
-        id: "equipment-rental",
-        name: "Equipment Rental",
-        code: "I",
-        estimatedTotal: 99500,
-        actualTotal: 0,
-        variance: -99500,
-        variancePercent: -100,
-        color: "bg-indigo-500",
-        icon: Camera,
-        items: [
-          {
-            id: "line_193",
-            lineNumber: 193,
-            category: "equipment-rental",
-            subcategory: "camera",
-            description: "Camera Rental",
-            estimatedTotal: 48000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-            source: "gear-management",
-          },
-          {
-            id: "line_195",
-            lineNumber: 195,
-            category: "equipment-rental",
-            subcategory: "lighting",
-            description: "Lighting Rental (except 1 big HMI)",
-            estimatedTotal: 2500,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-            source: "gear-management",
-          },
-          // Add more equipment rental items...
-        ],
-      },
-      {
-        id: "talent",
-        name: "Talent",
-        code: "M",
-        estimatedTotal: 277459,
-        actualTotal: 0,
-        variance: -277459,
-        variancePercent: -100,
-        color: "bg-pink-500",
-        icon: Users,
-        items: [
-          {
-            id: "line_234",
-            lineNumber: 234,
-            category: "talent",
-            subcategory: "principals",
-            description: "O/C Principal #1",
-            crew: 1,
-            days: 20,
-            rate: 1000,
-            estimatedTotal: 20000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-            source: "cast-management",
-          },
-          {
-            id: "line_235",
-            lineNumber: 235,
-            category: "talent",
-            subcategory: "principals",
-            description: "O/C Principal #2",
-            crew: 1,
-            days: 17,
-            rate: 1000,
-            estimatedTotal: 17000,
-            actualTotal: 0,
-            notes: "",
-            aiGenerated: false,
-            lastUpdated: new Date().toISOString(),
-            source: "cast-management",
-          },
-          // Add more talent items...
-        ],
-      },
-    ]
+    // Helper to generate realistic data based on project type
+    // Project 1: Standard, Project 2: Indie (lower), Project 3: Micro (lowest)
+    const multiplier = projectId === "1" ? 1 : projectId === "2" ? 0.7 : 0.3
 
-    // Customize for different projects
-    if (projectId === "2") {
-      initialBudgetData.forEach(cat => {
-        cat.estimatedTotal = Math.round(cat.estimatedTotal * 0.7);
-        cat.actualTotal = Math.round(cat.actualTotal * 0.7);
-        cat.items.forEach(item => {
-          item.estimatedTotal = Math.round(item.estimatedTotal * 0.7);
-          item.actualTotal = Math.round(item.actualTotal * 0.7);
-        });
-      });
-    } else if (projectId === "3") {
-      initialBudgetData.forEach(cat => {
-        cat.estimatedTotal = Math.round(cat.estimatedTotal * 0.4);
-        cat.actualTotal = Math.round(cat.actualTotal * 0.4);
-        cat.items.forEach(item => {
-          item.estimatedTotal = Math.round(item.estimatedTotal * 0.4);
-          item.actualTotal = Math.round(item.actualTotal * 0.4);
-        });
-      });
-    }
+    // Create a deep copy of initial structure to populate
+    const filledBudgetData = initialBudgetDataConstants.map(category => {
+      const presets = BUDGET_PRESETS[category.id] || []
 
-    MOCK_STORE[projectId] = initialBudgetData // Store it
+      // If presets exist, map them. If not, keep empty items array.
+      const items = presets.length > 0 ? presets.map((preset, index) => {
+        // Determine if this item should have data
+        // Randomly populate ~40% of items to make it look realistic but not overwhelming
+        // Always populate the first 2 items of each section to ensure coverage so users see *something*
+        const shouldPopulate = index < 2 || Math.random() > 0.6
 
-    setBudgetData(initialBudgetData)
-    setExpandedCategories(new Set(["pre-production", "production"]))
+        if (!shouldPopulate) {
+          return {
+            id: `line_${category.id}_${index}`,
+            lineNumber: index + 1,
+            category: category.id,
+            subcategory: preset.subcategory,
+            description: preset.description,
+            rate: preset.suggestedRate,
+            estimatedTotal: 0,
+            actualTotal: 0,
+            notes: "",
+            aiGenerated: false,
+            lastUpdated: new Date().toISOString(),
+          }
+        }
 
-    // Generate initial AI suggestions
-    generateAISuggestions(initialBudgetData)
+        // Generate values
+        // Use suggested rate or random between 100-600
+        const baseRate = preset.suggestedRate || Math.floor(Math.random() * 500) + 100
+        const rate = Math.round(baseRate * multiplier)
+        const days = Math.floor(Math.random() * 10) + 1
+        const crew = Math.floor(Math.random() * 3) + 1
+        const estimated = Math.round(rate * days * crew)
+
+        // Random actuals (sometimes over, sometimes under, sometimes 0)
+        // 80% - 120% variance
+        const varianceFactor = 0.8 + Math.random() * 0.4
+        // 70% chance of having actuals
+        const actual = Math.random() > 0.3 ? Math.round(estimated * varianceFactor) : 0
+
+        return {
+          id: `line_${category.id}_${index}`,
+          lineNumber: index + 1,
+          category: category.id,
+          subcategory: preset.subcategory,
+          description: preset.description,
+          rate: rate,
+          days: days,
+          crew: crew,
+          estimatedTotal: estimated,
+          actualTotal: actual,
+          notes: "",
+          aiGenerated: false,
+          lastUpdated: new Date().toISOString(),
+        }
+      }) : []
+
+      // Calculate totals for this category immediately
+      const estTotal = items.reduce((sum, i) => sum + i.estimatedTotal, 0)
+      const actTotal = items.reduce((sum, i) => sum + i.actualTotal, 0)
+      const variance = actTotal - estTotal
+      const variancePercent = estTotal > 0 ? (variance / estTotal) * 100 : 0
+
+      return {
+        ...category,
+        items,
+        estimatedTotal: estTotal,
+        actualTotal: actTotal,
+        variance,
+        variancePercent
+      }
+    })
+
+    MOCK_STORE[projectId] = filledBudgetData
+    setBudgetData(filledBudgetData)
+    setExpandedCategories(new Set(["A", "B"]))
+    generateAISuggestions(filledBudgetData)
+
   }, [projectId])
 
   // Sync back to store on change
@@ -445,13 +389,13 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
   // Add this useEffect after the existing useEffect for initializing budget data
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Check if the click is outside the budget table rows
       const target = event.target as HTMLElement
-      const isTableRow = target.closest("tr")
-      const isEditButton = target.closest("button")?.querySelector("svg")?.classList.contains("lucide-edit")
+      const clickedRow = target.closest("tr")
+      const clickedRowId = clickedRow?.getAttribute("data-row-id")
 
-      // If clicking outside table rows or not on an edit button, exit edit mode
-      if (!isTableRow || (!isEditButton && editingItem)) {
+      // If we are editing, and we clicked something that is NOT the current row, exit edit mode
+      // This allows clicking inputs/tools within the row without closing it
+      if (editingItem && clickedRowId !== editingItem) {
         setEditingItem(null)
       }
     }
@@ -547,22 +491,37 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
   // Update line item
   const updateLineItem = (categoryId: string, itemId: string, updates: Partial<BudgetLineItem>) => {
     setBudgetData((prev) =>
-      prev.map((category) =>
-        category.id === categoryId
-          ? {
-            ...category,
-            items: category.items.map((item) =>
-              item.id === itemId
-                ? {
-                  ...item,
-                  ...updates,
-                  lastUpdated: new Date().toISOString(),
-                }
-                : item,
-            ),
+      prev.map((category) => {
+        if (category.id !== categoryId) return category
+
+        const updatedItems = category.items.map((item) => {
+          if (item.id !== itemId) return item
+
+          const updatedItem = {
+            ...item,
+            ...updates,
+            lastUpdated: new Date().toISOString(),
           }
-          : category,
-      ),
+
+          // Auto-calculate totals if rate/days/crew changes
+          if (updates.rate !== undefined || updates.days !== undefined || updates.crew !== undefined) {
+            // Basic logic: if total is not manually set in this update, recalc it
+            if (updates.estimatedTotal === undefined) {
+              const crew = updates.crew ?? item.crew ?? 1
+              const days = updates.days ?? item.days ?? 1
+              const rate = updates.rate ?? item.rate ?? 0
+              updatedItem.estimatedTotal = crew * days * rate
+            }
+          }
+
+          return updatedItem
+        })
+
+        return recalculateCategory({
+          ...category,
+          items: updatedItems,
+        })
+      }),
     )
   }
 
@@ -573,7 +532,7 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
 
     const newItem: BudgetLineItem = {
       id: `line_${Date.now()}`,
-      lineNumber: Math.max(...category.items.map((item) => item.lineNumber)) + 1,
+      lineNumber: Math.max(0, ...category.items.map((item) => item.lineNumber)) + 1,
       category: categoryId,
       subcategory: "misc",
       description: "New Line Item",
@@ -587,13 +546,69 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
     setBudgetData((prev) =>
       prev.map((cat) =>
         cat.id === categoryId
-          ? {
+          ? recalculateCategory({
             ...cat,
             items: [...cat.items, newItem],
-          }
+          })
           : cat,
       ),
     )
+
+    // Ensure we can see the new item
+    const newShowZero = new Set(showZeroRows)
+    newShowZero.add(categoryId)
+    setShowZeroRows(newShowZero)
+  }
+
+  const [originalItem, setOriginalItem] = useState<BudgetLineItem | null>(null)
+
+  // Start editing a line item
+  const startEditing = (item: BudgetLineItem) => {
+    setOriginalItem(item)
+    setEditingItem(item.id)
+  }
+
+  // Cancel editing - revert changes
+  const cancelEditing = () => {
+    if (originalItem && editingItem) {
+      // Find the category of the item
+      const category = budgetData.find((cat) => cat.items.some((i) => i.id === editingItem))
+      if (category) {
+        // We can't use updateLineItem here easily because it expects partial, 
+        // but we want to revert fully. Let's direct set.
+        setBudgetData((prev) => prev.map(cat => {
+          if (cat.id !== category.id) return cat
+          const updatedItems = cat.items.map(i => i.id === editingItem ? originalItem : i)
+          return recalculateCategory({ ...cat, items: updatedItems })
+        }))
+      }
+    }
+    setEditingItem(null)
+    setOriginalItem(null)
+  }
+
+  // Save editing - keep changes
+  const saveEditing = () => {
+    setEditingItem(null)
+    setOriginalItem(null)
+  }
+
+  // Delete line item
+  const deleteLineItem = (categoryId: string, itemId: string) => {
+    setBudgetData((prev) =>
+      prev.map((cat) =>
+        cat.id === categoryId
+          ? recalculateCategory({
+            ...cat,
+            items: cat.items.filter((item) => item.id !== itemId),
+          })
+          : cat,
+      ),
+    )
+    // Ensure we can see the new item
+    const newShowZero = new Set(showZeroRows)
+    newShowZero.add(categoryId)
+    setShowZeroRows(newShowZero)
   }
 
   // Generate AI estimates
@@ -645,6 +660,16 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
     setExpandedCategories(newExpanded)
   }
 
+  const toggleZeroRows = (categoryId: string) => {
+    const newShowZero = new Set(showZeroRows)
+    if (newShowZero.has(categoryId)) {
+      newShowZero.delete(categoryId)
+    } else {
+      newShowZero.add(categoryId)
+    }
+    setShowZeroRows(newShowZero)
+  }
+
   const totals = calculateTotals()
   const filteredCategories = getFilteredCategories()
 
@@ -657,8 +682,9 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
     return (
       <tr
         key={item.id}
+        data-row-id={item.id}
         className={`border-b border-white/10 hover:bg-white/5 cursor-pointer ${item.aiGenerated ? "bg-purple-500/10" : ""}`}
-        onClick={() => setEditingItem(item.id)}
+        onClick={() => startEditing(item)}
       >
         <td className="px-4 py-3 text-white/70 text-sm">{item.lineNumber}</td>
         <td className="px-4 py-3">
@@ -672,7 +698,11 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-white text-sm">{item.description}</span>
-              {item.aiGenerated && <Brain className="h-4 w-4 text-purple-400" title="AI Generated" />}
+              {item.aiGenerated && (
+                <span title="AI Generated">
+                  <Brain className="h-4 w-4 text-purple-400" />
+                </span>
+              )}
               {item.source && (
                 <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">
                   {item.source.replace("-", " ")}
@@ -766,13 +796,19 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
             {isEditing ? (
               <>
                 <button
-                  onClick={() => setEditingItem(null)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    saveEditing()
+                  }}
                   className="p-1 rounded hover:bg-green-500/20 transition-colors"
                 >
                   <Save className="h-4 w-4 text-green-400" />
                 </button>
                 <button
-                  onClick={() => setEditingItem(null)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    cancelEditing()
+                  }}
                   className="p-1 rounded hover:bg-red-500/20 transition-colors"
                 >
                   <X className="h-4 w-4 text-red-400" />
@@ -781,15 +817,24 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
             ) : (
               <>
                 <button
-                  onClick={() => setEditingItem(item.id)}
+                  onClick={() => startEditing(item)}
                   className="p-1 rounded hover:bg-white/10 transition-colors"
                 >
                   <Edit className="h-4 w-4 text-white/70" />
                 </button>
-                <button className="p-1 rounded hover:bg-white/10 transition-colors">
+                <button
+                  className="p-1 rounded hover:bg-white/10 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Copy className="h-4 w-4 text-white/70" />
                 </button>
-                <button className="p-1 rounded hover:bg-red-500/20 transition-colors">
+                <button
+                  className="p-1 rounded hover:bg-red-500/20 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deleteLineItem(categoryId, item.id)
+                  }}
+                >
                   <Trash2 className="h-4 w-4 text-red-400" />
                 </button>
               </>
@@ -1021,6 +1066,20 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
                     >
                       <Plus className="h-4 w-4 text-white/70" />
                     </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleZeroRows(category.id)
+                      }}
+                      className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                      title={showZeroRows.has(category.id) ? "Hide empty rows" : "Show empty rows"}
+                    >
+                      {showZeroRows.has(category.id) ? (
+                        <Eye className="h-4 w-4 text-white/70" />
+                      ) : (
+                        <EyeOff className="h-4 w-4 text-white/70" />
+                      )}
+                    </button>
                     {isExpanded ? (
                       <ChevronUp className="h-5 w-5 text-white/70" />
                     ) : (
@@ -1048,7 +1107,21 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
                           <th className="px-4 py-3 text-center text-white/70 text-sm font-medium">Actions</th>
                         </tr>
                       </thead>
-                      <tbody>{category.items.map((item) => renderLineItem(item, category.id))}</tbody>
+                      <tbody>
+                        {category.items
+                          .filter((item) => {
+                            if (showZeroRows.has(category.id)) return true
+                            // Always show if editing this item
+                            if (editingItem === item.id) return true
+                            // Show if it has values or is new
+                            return (
+                              item.estimatedTotal > 0 ||
+                              item.actualTotal > 0 ||
+                              item.description === "New Line Item"
+                            )
+                          })
+                          .map((item) => renderLineItem(item, category.id))}
+                      </tbody>
                     </table>
                   </div>
                 </div>
