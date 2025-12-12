@@ -3,7 +3,7 @@
 import { useState } from "react"
 import {
     Settings,
-    Plus, // Added
+    Plus,
     Folder,
     Download,
     Archive,
@@ -27,9 +27,10 @@ interface Project {
 
 interface ProjectManagerProps {
     onNavigateToProject?: (projectId: string) => void
+    onCreateProject?: () => void
 }
 
-export default function ProjectManager({ onNavigateToProject }: ProjectManagerProps) {
+export default function ProjectManager({ onNavigateToProject, onCreateProject }: ProjectManagerProps) {
     const [projects, setProjects] = useState<Project[]>([
         { id: "1", title: "Midnight Chronicles", status: "production", lastActivity: "2 min ago", size: "1.2 GB" },
         { id: "2", title: "Urban Legends", status: "development", lastActivity: "2 days ago", size: "450 MB" },
@@ -81,7 +82,7 @@ export default function ProjectManager({ onNavigateToProject }: ProjectManagerPr
                     </div>
                     <button
                         className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm shadow-lg hover:shadow-blue-500/25"
-                        onClick={() => alert("New Project Wizard starting...")}
+                        onClick={() => onCreateProject?.()}
                     >
                         <Plus className="h-4 w-4" />
                         New Project

@@ -1097,12 +1097,7 @@ export default function StudioFlowDashboard() {
           <h2 className="text-2xl font-bold text-white">Active Projects</h2>
           <button
             className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors shadow-lg hover:shadow-blue-500/25"
-            onClick={() => {
-              // In a real app, this would open a modal or navigate to a creation flow
-              setCurrentView("settings");
-              // logic to set active tab to projects would go here if state was lifted
-              alert("New Project Wizard starting...");
-            }}
+            onClick={createNewProject}
           >
             <Plus className="h-4 w-4" />
             New Project
@@ -1117,12 +1112,19 @@ export default function StudioFlowDashboard() {
               onClick={() => setSelectedProject(project)}
             >
               <div className="relative h-48">
-                <Image
-                  src={project.thumbnail || "/placeholder.svg"}
-                  alt={project.title}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+                {project.backgroundType === 'gradient' ? (
+                  <div
+                    className="w-full h-full"
+                    style={{ background: project.backgroundImage || project.thumbnail }}
+                  />
+                ) : (
+                  <Image
+                    src={project.backgroundImage || project.thumbnail || "/placeholder.svg"}
+                    alt={project.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
                 {/* Status Badge */}
@@ -1297,6 +1299,36 @@ export default function StudioFlowDashboard() {
       </div>
     </div>
   )
+
+  // Project Creation Logic
+  const createNewProject = () => {
+    const newProject: Project = {
+      id: (projects.length + 1).toString(),
+      title: "New Untitled Project",
+      status: "development",
+      type: "Film",
+      progress: 0,
+      budget: 0,
+      budgetUsed: 0,
+      daysRemaining: 0,
+      totalDays: 0,
+      genre: "Unspecified",
+      format: "Standard",
+      lastActivity: "Just now",
+      thumbnail: "/placeholder.svg",
+      priority: "medium",
+      team: [],
+      description: "A new project ready for development.",
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    }
+
+    setProjects([newProject, ...projects])
+    // Optionally navigate to settings immediately
+    setSelectedProject(newProject)
+    setCurrentProject(newProject)
+    setCurrentView("project-settings")
+  }
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -1976,6 +2008,7 @@ export default function StudioFlowDashboard() {
                       setSidebarCollapsed(false)
                     }
                   }}
+                  onCreateProject={createNewProject}
                 />
               ) : currentView === "assets" ? (
                 <AssetManagement projectId={currentProject?.id} />
@@ -1985,6 +2018,7 @@ export default function StudioFlowDashboard() {
                   onUpdateProject={(project, updates) => {
                     const updated = { ...project, ...updates }
                     setCurrentProject(updated)
+                    setProjects(projects.map(p => p.id === updated.id ? updated : p))
                   }}
                 />
               ) : (

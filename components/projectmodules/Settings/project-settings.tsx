@@ -60,6 +60,66 @@ export default function ProjectSettings({ currentProject, onUpdateProject }: Pro
             value: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba",
             thumbnail: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=300&auto=format&fit=crop",
         },
+        {
+            id: "abstract-neon",
+            name: "Abstract Neon",
+            type: "image",
+            value: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b",
+            thumbnail: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=300&auto=format&fit=crop",
+        },
+        {
+            id: "studio-set",
+            name: "Film Set",
+            type: "image",
+            value: "https://images.unsplash.com/photo-1598899134739-967d8d565e22",
+            thumbnail: "https://images.unsplash.com/photo-1598899134739-967d8d565e22?q=80&w=300&auto=format&fit=crop",
+        },
+        {
+            id: "minimal-gradient",
+            name: "Deep Ocean",
+            type: "gradient",
+            value: "linear-gradient(to right, #0f2027, #203a43, #2c5364)",
+            thumbnail: "/gradients/ocean.png", // Fallback will be handled or used as color
+            isCustom: false
+        },
+        {
+            id: "sunset-vibes",
+            name: "Sunset Vibes",
+            type: "gradient",
+            value: "linear-gradient(to right, #ff5f6d, #ffc371)",
+            thumbnail: "",
+            isCustom: false
+        },
+        {
+            id: "northern-lights",
+            name: "Northern Lights",
+            type: "gradient",
+            value: "linear-gradient(to right, #00c6ff, #0072ff)",
+            thumbnail: "",
+            isCustom: false
+        },
+        {
+            id: "midnight-city",
+            name: "Midnight City",
+            type: "gradient",
+            value: "linear-gradient(to right, #232526, #414345)",
+            thumbnail: "",
+            isCustom: false
+        },
+        {
+            id: "noir-city",
+            name: "Noir City",
+            type: "image",
+            value: "https://images.unsplash.com/photo-1480796927426-f609979314bd",
+            thumbnail: "https://images.unsplash.com/photo-1480796927426-f609979314bd?q=80&w=300&auto=format&fit=crop",
+        },
+        {
+            id: "scifi-corridor",
+            name: "Sci-Fi Corridor",
+            type: "image",
+            value: "https://images.unsplash.com/photo-1535295972055-1c762f4483e5",
+            thumbnail: "https://images.unsplash.com/photo-1535295972055-1c762f4483e5?q=80&w=300&auto=format&fit=crop",
+        },
     ]
 
     const handleSaveGeneral = () => {
@@ -145,7 +205,11 @@ export default function ProjectSettings({ currentProject, onUpdateProject }: Pro
                             onClick={() => handleBackgroundChange(bg)}
                         >
                             <div className="aspect-video relative">
-                                <img src={bg.thumbnail || "/placeholder.svg"} alt={bg.name} className="w-full h-full object-cover" />
+                                {bg.type === "image" ? (
+                                    <img src={bg.thumbnail || "/placeholder.svg"} alt={bg.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full" style={{ background: bg.value }}></div>
+                                )}
                                 {selectedBackground === bg.id && (
                                     <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
                                         <Check className="h-6 w-6 text-white" />

@@ -52,9 +52,10 @@ interface BackgroundOption {
 
 interface GlobalSettingsProps {
     onNavigateToProject?: (projectId: string) => void
+    onCreateProject?: () => void
 }
 
-export default function GlobalSettings({ onNavigateToProject }: GlobalSettingsProps) {
+export default function GlobalSettings({ onNavigateToProject, onCreateProject }: GlobalSettingsProps) {
     const [activeTab, setActiveTab] = useState<"general" | "appearance" | "keyboard" | "account" | "integrations" | "projects">("general")
     const [searchQuery, setSearchQuery] = useState("")
     const [editingShortcut, setEditingShortcut] = useState<string | null>(null)
@@ -197,7 +198,7 @@ export default function GlobalSettings({ onNavigateToProject }: GlobalSettingsPr
             {/* Settings Content */}
             <div className="flex-1 p-6 overflow-y-auto h-full">
                 {activeTab === "general" && renderGeneralSettings()}
-                {activeTab === "projects" && <ProjectManager onNavigateToProject={onNavigateToProject} />}
+                {activeTab === "projects" && <ProjectManager onNavigateToProject={onNavigateToProject} onCreateProject={onCreateProject} />}
                 {activeTab === "appearance" && renderAppearanceSettings()}
                 {/* Placeholders for other tabs to be fully fleshed out */}
                 {activeTab === "keyboard" && <div className="text-white">Keyboard Settings (Migrated)</div>}
