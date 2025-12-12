@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   MapPin,
   Plus,
@@ -62,11 +62,15 @@ interface LocationScoutingProps {
     status: string
     type: string
   }
+  projectId?: string
 }
+
+const MOCK_LOCATIONS_STORE: Record<string, Location[]> = {}
 
 export default function LocationScouting({
   searchQuery = "",
   filters = { status: "all", type: "all" },
+  projectId = "1",
 }: LocationScoutingProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
@@ -74,151 +78,177 @@ export default function LocationScouting({
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid")
+  const [locations, setLocations] = useState<Location[]>([])
 
   // Sample location data
-  const locations: Location[] = [
-    {
-      id: "1",
-      name: "Downtown Loft Studio",
-      type: "interior",
-      address: "123 Industrial Blvd, Los Angeles, CA 90028",
-      coordinates: { lat: 34.0522, lng: -118.2437 },
-      status: "booked",
-      priority: "high",
-      contact: {
-        owner: "Metro Studios LLC",
-        phone: "+1 (555) 123-4567",
-        email: "bookings@metrostudios.com",
-        agent: "Location Agency - Sarah Kim",
+  useEffect(() => {
+    if (MOCK_LOCATIONS_STORE[projectId]) {
+      setLocations(MOCK_LOCATIONS_STORE[projectId])
+      return
+    }
+
+    const initialLocations: Location[] = [
+      {
+        id: "1",
+        name: "Downtown Loft Studio",
+        type: "interior",
+        address: "123 Industrial Blvd, Los Angeles, CA 90028",
+        coordinates: { lat: 34.0522, lng: -118.2437 },
+        status: "booked",
+        priority: "high",
+        contact: {
+          owner: "Metro Studios LLC",
+          phone: "+1 (555) 123-4567",
+          email: "bookings@metrostudios.com",
+          agent: "Location Agency - Sarah Kim",
+        },
+        details: {
+          size: "3,500 sq ft",
+          capacity: 50,
+          rate: "$2,500/day",
+          availability: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+          permits: true,
+          insurance: true,
+        },
+        amenities: ["Parking", "WiFi", "Power", "HVAC", "Kitchen", "Bathroom", "Loading Dock"],
+        media: {
+          photos: [
+            "/placeholder.svg?height=300&width=400&text=Loft+Main+Room",
+            "/placeholder.svg?height=300&width=400&text=Loft+Kitchen",
+            "/placeholder.svg?height=300&width=400&text=Loft+Exterior",
+          ],
+          video: "loft-walkthrough.mp4",
+          floorPlan: "loft-floorplan.pdf",
+        },
+        notes: "Perfect for modern apartment scenes. Great natural light from large windows.",
+        scoutDate: "2024-01-10",
+        shootDates: ["2024-02-15", "2024-02-16", "2024-02-17"],
+        rating: 5,
+        scenes: ["INT. SARAH'S APARTMENT - DAY", "INT. SARAH'S APARTMENT - NIGHT"],
       },
-      details: {
-        size: "3,500 sq ft",
-        capacity: 50,
-        rate: "$2,500/day",
-        availability: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-        permits: true,
-        insurance: true,
+      {
+        id: "2",
+        name: "Griffith Observatory",
+        type: "exterior",
+        address: "2800 E Observatory Rd, Los Angeles, CA 90027",
+        coordinates: { lat: 34.1184, lng: -118.3004 },
+        status: "pending",
+        priority: "high",
+        contact: {
+          owner: "City of Los Angeles",
+          phone: "+1 (555) 987-6543",
+          email: "permits@lacity.org",
+        },
+        details: {
+          size: "Public Space",
+          capacity: 100,
+          rate: "$5,000/day + permits",
+          availability: ["Sat", "Sun"],
+          permits: false,
+          insurance: true,
+        },
+        amenities: ["Parking", "Restrooms", "Security", "Iconic Views"],
+        media: {
+          photos: [
+            "/placeholder.svg?height=300&width=400&text=Observatory+Exterior",
+            "/placeholder.svg?height=300&width=400&text=Observatory+View",
+            "/placeholder.svg?height=300&width=400&text=Observatory+Interior",
+          ],
+        },
+        notes: "Iconic LA location. Requires city permits and coordination with public access.",
+        scoutDate: "2024-01-12",
+        rating: 5,
+        scenes: ["EXT. OBSERVATORY - SUNSET", "EXT. OBSERVATORY - NIGHT"],
       },
-      amenities: ["Parking", "WiFi", "Power", "HVAC", "Kitchen", "Bathroom", "Loading Dock"],
-      media: {
-        photos: [
-          "/placeholder.svg?height=300&width=400&text=Loft+Main+Room",
-          "/placeholder.svg?height=300&width=400&text=Loft+Kitchen",
-          "/placeholder.svg?height=300&width=400&text=Loft+Exterior",
-        ],
-        video: "loft-walkthrough.mp4",
-        floorPlan: "loft-floorplan.pdf",
+      {
+        id: "3",
+        name: "Venice Beach Boardwalk",
+        type: "exterior",
+        address: "Venice Beach Boardwalk, Venice, CA 90291",
+        coordinates: { lat: 33.985, lng: -118.4695 },
+        status: "scouting",
+        priority: "medium",
+        contact: {
+          owner: "Venice Beach Recreation",
+          phone: "+1 (555) 456-7890",
+          email: "filming@venicebeach.org",
+        },
+        details: {
+          size: "2 mile boardwalk",
+          capacity: 200,
+          rate: "$3,000/day",
+          availability: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+          permits: false,
+          insurance: true,
+        },
+        amenities: ["Public Access", "Restrooms", "Food Vendors", "Parking (Limited)"],
+        media: {
+          photos: [
+            "/placeholder.svg?height=300&width=400&text=Venice+Boardwalk",
+            "/placeholder.svg?height=300&width=400&text=Venice+Beach",
+            "/placeholder.svg?height=300&width=400&text=Venice+Pier",
+          ],
+        },
+        notes: "Vibrant beach location with street performers and vendors. Crowded on weekends.",
+        scoutDate: "2024-01-20",
+        rating: 4,
+        scenes: ["EXT. BEACH BOARDWALK - DAY"],
       },
-      notes: "Perfect for modern apartment scenes. Great natural light from large windows.",
-      scoutDate: "2024-01-10",
-      shootDates: ["2024-02-15", "2024-02-16", "2024-02-17"],
-      rating: 5,
-      scenes: ["INT. SARAH'S APARTMENT - DAY", "INT. SARAH'S APARTMENT - NIGHT"],
-    },
-    {
-      id: "2",
-      name: "Griffith Observatory",
-      type: "exterior",
-      address: "2800 E Observatory Rd, Los Angeles, CA 90027",
-      coordinates: { lat: 34.1184, lng: -118.3004 },
-      status: "pending",
-      priority: "high",
-      contact: {
-        owner: "City of Los Angeles",
-        phone: "+1 (555) 987-6543",
-        email: "permits@lacity.org",
+      {
+        id: "4",
+        name: "Historic Downtown Office",
+        type: "interior",
+        address: "456 Spring St, Los Angeles, CA 90013",
+        coordinates: { lat: 34.0522, lng: -118.25 },
+        status: "available",
+        priority: "medium",
+        contact: {
+          owner: "Heritage Properties",
+          phone: "+1 (555) 321-0987",
+          email: "leasing@heritage.com",
+          agent: "Downtown Locations - Mike Chen",
+        },
+        details: {
+          size: "2,000 sq ft",
+          capacity: 30,
+          rate: "$1,800/day",
+          availability: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          permits: true,
+          insurance: true,
+        },
+        amenities: ["Elevator", "WiFi", "Power", "HVAC", "Conference Room", "Reception Area"],
+        media: {
+          photos: [
+            "/placeholder.svg?height=300&width=400&text=Office+Reception",
+            "/placeholder.svg?height=300&width=400&text=Office+Conference",
+            "/placeholder.svg?height=300&width=400&text=Office+Exterior",
+          ],
+          floorPlan: "office-floorplan.pdf",
+        },
+        notes: "Classic 1920s architecture. Perfect for period pieces or modern corporate scenes.",
+        rating: 4,
+        scenes: ["INT. POLICE STATION - DAY", "INT. DETECTIVE'S OFFICE - NIGHT"],
       },
-      details: {
-        size: "Public Space",
-        capacity: 100,
-        rate: "$5,000/day + permits",
-        availability: ["Sat", "Sun"],
-        permits: false,
-        insurance: true,
-      },
-      amenities: ["Parking", "Restrooms", "Security", "Iconic Views"],
-      media: {
-        photos: [
-          "/placeholder.svg?height=300&width=400&text=Observatory+Exterior",
-          "/placeholder.svg?height=300&width=400&text=Observatory+View",
-          "/placeholder.svg?height=300&width=400&text=Observatory+Interior",
-        ],
-      },
-      notes: "Iconic LA location. Requires city permits and coordination with public access.",
-      scoutDate: "2024-01-12",
-      rating: 5,
-      scenes: ["EXT. OBSERVATORY - SUNSET", "EXT. OBSERVATORY - NIGHT"],
-    },
-    {
-      id: "3",
-      name: "Venice Beach Boardwalk",
-      type: "exterior",
-      address: "Venice Beach Boardwalk, Venice, CA 90291",
-      coordinates: { lat: 33.985, lng: -118.4695 },
-      status: "scouting",
-      priority: "medium",
-      contact: {
-        owner: "Venice Beach Recreation",
-        phone: "+1 (555) 456-7890",
-        email: "filming@venicebeach.org",
-      },
-      details: {
-        size: "2 mile boardwalk",
-        capacity: 200,
-        rate: "$3,000/day",
-        availability: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-        permits: false,
-        insurance: true,
-      },
-      amenities: ["Public Access", "Restrooms", "Food Vendors", "Parking (Limited)"],
-      media: {
-        photos: [
-          "/placeholder.svg?height=300&width=400&text=Venice+Boardwalk",
-          "/placeholder.svg?height=300&width=400&text=Venice+Beach",
-          "/placeholder.svg?height=300&width=400&text=Venice+Pier",
-        ],
-      },
-      notes: "Vibrant beach location with street performers and vendors. Crowded on weekends.",
-      scoutDate: "2024-01-20",
-      rating: 4,
-      scenes: ["EXT. BEACH BOARDWALK - DAY"],
-    },
-    {
-      id: "4",
-      name: "Historic Downtown Office",
-      type: "interior",
-      address: "456 Spring St, Los Angeles, CA 90013",
-      coordinates: { lat: 34.0522, lng: -118.25 },
-      status: "available",
-      priority: "medium",
-      contact: {
-        owner: "Heritage Properties",
-        phone: "+1 (555) 321-0987",
-        email: "leasing@heritage.com",
-        agent: "Downtown Locations - Mike Chen",
-      },
-      details: {
-        size: "2,000 sq ft",
-        capacity: 30,
-        rate: "$1,800/day",
-        availability: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        permits: true,
-        insurance: true,
-      },
-      amenities: ["Elevator", "WiFi", "Power", "HVAC", "Conference Room", "Reception Area"],
-      media: {
-        photos: [
-          "/placeholder.svg?height=300&width=400&text=Office+Reception",
-          "/placeholder.svg?height=300&width=400&text=Office+Conference",
-          "/placeholder.svg?height=300&width=400&text=Office+Exterior",
-        ],
-        floorPlan: "office-floorplan.pdf",
-      },
-      notes: "Classic 1920s architecture. Perfect for period pieces or modern corporate scenes.",
-      rating: 4,
-      scenes: ["INT. POLICE STATION - DAY", "INT. DETECTIVE'S OFFICE - NIGHT"],
-    },
-  ]
+    ]
+
+    if (projectId === "2") {
+      initialLocations.shift();
+      initialLocations[0].name = "Central Park";
+      initialLocations[0].address = "New York, NY";
+    } else if (projectId === "3") {
+      initialLocations.pop();
+      initialLocations[0].name = "Santa Monica Pier";
+    }
+
+    MOCK_LOCATIONS_STORE[projectId] = initialLocations;
+    setLocations(initialLocations);
+  }, [projectId])
+
+  useEffect(() => {
+    if (locations.length > 0 && projectId) {
+      MOCK_LOCATIONS_STORE[projectId] = locations
+    }
+  }, [locations, projectId])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -279,17 +309,15 @@ export default function LocationScouting({
           <div className="flex bg-white/10 rounded-lg p-1">
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-1 rounded text-sm transition-colors ${
-                viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70"
-              }`}
+              className={`px-3 py-1 rounded text-sm transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70"
+                }`}
             >
               Grid
             </button>
             <button
               onClick={() => setViewMode("map")}
-              className={`px-3 py-1 rounded text-sm transition-colors ${
-                viewMode === "map" ? "bg-white/20 text-white" : "text-white/70"
-              }`}
+              className={`px-3 py-1 rounded text-sm transition-colors ${viewMode === "map" ? "bg-white/20 text-white" : "text-white/70"
+                }`}
             >
               Map
             </button>
@@ -557,11 +585,10 @@ export default function LocationScouting({
                       {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
                         <span
                           key={day}
-                          className={`px-2 py-1 rounded text-xs ${
-                            selectedLocation.details.availability.includes(day)
+                          className={`px-2 py-1 rounded text-xs ${selectedLocation.details.availability.includes(day)
                               ? "bg-green-500 text-white"
                               : "bg-white/20 text-white/70"
-                          }`}
+                            }`}
                         >
                           {day}
                         </span>

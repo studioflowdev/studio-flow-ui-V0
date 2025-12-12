@@ -108,7 +108,13 @@ interface Rating {
   createdAt: string
 }
 
-export default function DailiesReviewModule() {
+interface DailiesReviewModuleProps {
+  projectId?: string
+}
+
+const MOCK_DAILIES_STORE: Record<string, DailiesClip[]> = {}
+
+export default function DailiesReviewModule({ projectId = "1" }: DailiesReviewModuleProps) {
   const [selectedClip, setSelectedClip] = useState<DailiesClip | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -132,250 +138,276 @@ export default function DailiesReviewModule() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   // Sample dailies data
-  const dailiesClips: DailiesClip[] = [
-    {
-      id: "clip-1",
-      filename: "SC012_T003_CAM-A_HERO.mov",
-      scene: "Scene 12",
-      take: 3,
-      camera: "Camera A",
-      duration: 180,
-      timecode: "01:23:45:12",
-      shootingDate: "2024-03-15",
-      director: "Sarah Chen",
-      dp: "Alex Kim",
-      status: "new",
-      thumbnail: "/placeholder.svg?height=200&width=300",
-      videoUrl: "/sample-video.mp4",
-      proxyUrl: "/sample-proxy.mp4",
-      metadata: {
-        resolution: "4K (4096x2160)",
-        fps: 24,
-        codec: "ProRes 422 HQ",
-        fileSize: 2.4 * 1024 * 1024 * 1024,
-        colorSpace: "Rec. 709",
-        lens: "50mm f/1.4",
-        iso: 800,
-        aperture: "f/2.8",
-        shutterSpeed: "1/48",
-      },
-      comments: [
-        {
-          id: "comment-1",
-          user: "Sarah Chen",
-          avatar: "SC",
-          role: "Director",
-          timestamp: 45,
-          timecode: "00:00:45:00",
-          comment: "Love the performance here, but can we get a tighter frame on the reaction?",
-          type: "note",
-          priority: "medium",
-          status: "open",
-          createdAt: "2024-03-15T14:30:00Z",
-          replies: [
-            {
-              id: "reply-1",
-              user: "Alex Kim",
-              avatar: "AK",
-              comment: "Agreed, I have a closer angle from Camera B we can use.",
-              createdAt: "2024-03-15T14:35:00Z",
-            },
-          ],
-        },
-        {
-          id: "comment-2",
-          user: "Emma Davis",
-          avatar: "ED",
-          role: "Editor",
-          timestamp: 120,
-          timecode: "00:02:00:00",
-          comment: "Audio levels seem low here, might need ADR.",
-          type: "issue",
-          priority: "high",
-          status: "open",
-          createdAt: "2024-03-15T15:00:00Z",
-          replies: [],
-        },
-      ],
-      ratings: [
-        {
-          user: "Sarah Chen",
-          role: "Director",
-          rating: 5,
-          category: "performance",
-          notes: "Excellent emotional range, this is the hero take.",
-          createdAt: "2024-03-15T14:45:00Z",
-        },
-        {
-          user: "Alex Kim",
-          role: "DP",
-          rating: 4,
-          category: "technical",
-          notes: "Good exposure, slight camera shake at 1:20.",
-          createdAt: "2024-03-15T14:50:00Z",
-        },
-      ],
-      tags: ["hero-take", "dialogue", "interior", "emotional"],
-      aiAnalysis: {
-        qualityScore: 94,
-        exposureAnalysis: "Optimal exposure with good shadow detail",
-        focusAnalysis: "Sharp focus throughout, slight rack focus at 1:15",
-        audioLevels: "Dialogue clear, ambient levels appropriate",
-        technicalIssues: ["Minor camera shake at 1:20-1:25"],
-        suggestions: [
-          "Consider color grading to enhance mood",
-          "Audio could benefit from slight EQ boost",
-          "Excellent performance - recommend as hero take",
-        ],
-        transcription: "I never thought I'd see you again. After all these years...",
-      },
-      syncStatus: "synced",
-      location: "Studio A - Interior Office Set",
-      weather: "Controlled Environment",
-      notes: "Great performance from both actors. Consider this the hero take for the scene.",
-    },
-    {
-      id: "clip-2",
-      filename: "SC012_T002_CAM-B_WIDE.mov",
-      scene: "Scene 12",
-      take: 2,
-      camera: "Camera B",
-      duration: 165,
-      timecode: "01:23:42:08",
-      shootingDate: "2024-03-15",
-      director: "Sarah Chen",
-      dp: "Alex Kim",
-      status: "reviewed",
-      thumbnail: "/placeholder.svg?height=200&width=300",
-      videoUrl: "/sample-video-2.mp4",
-      proxyUrl: "/sample-proxy-2.mp4",
-      metadata: {
-        resolution: "4K (4096x2160)",
-        fps: 24,
-        codec: "ProRes 422 HQ",
-        fileSize: 1.8 * 1024 * 1024 * 1024,
-        colorSpace: "Rec. 709",
-        lens: "24-70mm f/2.8",
-        iso: 800,
-        aperture: "f/4.0",
-        shutterSpeed: "1/48",
-      },
-      comments: [
-        {
-          id: "comment-3",
-          user: "Michael Torres",
-          avatar: "MT",
-          role: "Producer",
-          timestamp: 30,
-          timecode: "00:00:30:00",
-          comment: "Good coverage angle, this will cut well with the master.",
-          type: "approval",
-          priority: "low",
-          status: "acknowledged",
-          createdAt: "2024-03-15T16:00:00Z",
-          replies: [],
-        },
-      ],
-      ratings: [
-        {
-          user: "Emma Davis",
-          role: "Editor",
-          rating: 4,
-          category: "overall",
-          notes: "Solid coverage, good for cutting.",
-          createdAt: "2024-03-15T16:15:00Z",
-        },
-      ],
-      tags: ["coverage", "wide-shot", "interior"],
-      aiAnalysis: {
-        qualityScore: 87,
-        exposureAnalysis: "Slightly underexposed, recoverable in post",
-        focusAnalysis: "Sharp focus, good depth of field",
-        audioLevels: "Good dialogue clarity, room tone present",
-        technicalIssues: ["Slight underexposure", "Minor lens flare at 0:45"],
-        suggestions: ["Increase exposure by 0.3 stops in color correction", "Good for intercutting with master shot"],
-      },
-      syncStatus: "synced",
-      location: "Studio A - Interior Office Set",
-      weather: "Controlled Environment",
-      notes: "Good coverage angle for editing.",
-    },
-    {
-      id: "clip-3",
-      filename: "SC015_T001_CAM-A_ACTION.mov",
-      scene: "Scene 15",
-      take: 1,
-      camera: "Camera A",
-      duration: 240,
-      timecode: "02:15:30:00",
-      shootingDate: "2024-03-15",
-      director: "Sarah Chen",
-      dp: "Alex Kim",
-      status: "flagged",
-      thumbnail: "/placeholder.svg?height=200&width=300",
-      videoUrl: "/sample-video-3.mp4",
-      proxyUrl: "/sample-proxy-3.mp4",
-      metadata: {
-        resolution: "4K (4096x2160)",
-        fps: 24,
-        codec: "ProRes 422 HQ",
-        fileSize: 3.2 * 1024 * 1024 * 1024,
-        colorSpace: "Rec. 709",
-        lens: "85mm f/1.8",
-        iso: 1600,
-        aperture: "f/2.8",
-        shutterSpeed: "1/48",
-      },
-      comments: [
-        {
-          id: "comment-4",
-          user: "Tom Wilson",
-          avatar: "TW",
-          role: "Stunt Coordinator",
-          timestamp: 180,
-          timecode: "00:03:00:00",
-          comment: "Safety concern - actor too close to practical explosion. Need to reshoot.",
-          type: "issue",
-          priority: "high",
-          status: "open",
-          createdAt: "2024-03-15T17:30:00Z",
-          replies: [
-            {
-              id: "reply-2",
-              user: "Sarah Chen",
-              avatar: "SC",
-              comment: "Agreed, let's schedule a pickup shot with better safety distance.",
-              createdAt: "2024-03-15T17:35:00Z",
-            },
-          ],
-        },
-      ],
-      ratings: [],
-      tags: ["action", "stunt", "safety-concern", "reshoot-needed"],
-      aiAnalysis: {
-        qualityScore: 76,
-        exposureAnalysis: "High ISO noise visible, acceptable for action sequence",
-        focusAnalysis: "Motion blur present, appropriate for action",
-        audioLevels: "Loud practical effects, dialogue may need ADR",
-        technicalIssues: ["High ISO noise", "Motion blur", "Safety protocol violation"],
-        suggestions: [
-          "Noise reduction required in post",
-          "Consider ADR for dialogue clarity",
-          "Safety review required before approval",
-        ],
-      },
-      syncStatus: "synced",
-      location: "Warehouse - Practical Location",
-      weather: "Clear, 72°F",
-      notes: "Action sequence with practical effects. Safety concerns noted.",
-    },
-  ]
+  const [dailiesClips, setDailiesClips] = useState<DailiesClip[]>([])
 
   useEffect(() => {
-    if (dailiesClips.length > 0) {
-      setSelectedClip(dailiesClips[0])
+    if (MOCK_DAILIES_STORE[projectId]) {
+      setDailiesClips(MOCK_DAILIES_STORE[projectId])
+      if (MOCK_DAILIES_STORE[projectId].length > 0) {
+        setSelectedClip(MOCK_DAILIES_STORE[projectId][0])
+      }
+      return
     }
-  }, [])
+
+    const initialDailiesClips: DailiesClip[] = [
+      {
+        id: "clip-1",
+        filename: "SC012_T003_CAM-A_HERO.mov",
+        scene: "Scene 12",
+        take: 3,
+        camera: "Camera A",
+        duration: 180,
+        timecode: "01:23:45:12",
+        shootingDate: "2024-03-15",
+        director: "Sarah Chen",
+        dp: "Alex Kim",
+        status: "new",
+        thumbnail: "/placeholder.svg?height=200&width=300",
+        videoUrl: "/sample-video.mp4",
+        proxyUrl: "/sample-proxy.mp4",
+        metadata: {
+          resolution: "4K (4096x2160)",
+          fps: 24,
+          codec: "ProRes 422 HQ",
+          fileSize: 2.4 * 1024 * 1024 * 1024,
+          colorSpace: "Rec. 709",
+          lens: "50mm f/1.4",
+          iso: 800,
+          aperture: "f/2.8",
+          shutterSpeed: "1/48",
+        },
+        comments: [
+          {
+            id: "comment-1",
+            user: "Sarah Chen",
+            avatar: "SC",
+            role: "Director",
+            timestamp: 45,
+            timecode: "00:00:45:00",
+            comment: "Love the performance here, but can we get a tighter frame on the reaction?",
+            type: "note",
+            priority: "medium",
+            status: "open",
+            createdAt: "2024-03-15T14:30:00Z",
+            replies: [
+              {
+                id: "reply-1",
+                user: "Alex Kim",
+                avatar: "AK",
+                comment: "Agreed, I have a closer angle from Camera B we can use.",
+                createdAt: "2024-03-15T14:35:00Z",
+              },
+            ],
+          },
+          {
+            id: "comment-2",
+            user: "Emma Davis",
+            avatar: "ED",
+            role: "Editor",
+            timestamp: 120,
+            timecode: "00:02:00:00",
+            comment: "Audio levels seem low here, might need ADR.",
+            type: "issue",
+            priority: "high",
+            status: "open",
+            createdAt: "2024-03-15T15:00:00Z",
+            replies: [],
+          },
+        ],
+        ratings: [
+          {
+            user: "Sarah Chen",
+            role: "Director",
+            rating: 5,
+            category: "performance",
+            notes: "Excellent emotional range, this is the hero take.",
+            createdAt: "2024-03-15T14:45:00Z",
+          },
+          {
+            user: "Alex Kim",
+            role: "DP",
+            rating: 4,
+            category: "technical",
+            notes: "Good exposure, slight camera shake at 1:20.",
+            createdAt: "2024-03-15T14:50:00Z",
+          },
+        ],
+        tags: ["hero-take", "dialogue", "interior", "emotional"],
+        aiAnalysis: {
+          qualityScore: 94,
+          exposureAnalysis: "Optimal exposure with good shadow detail",
+          focusAnalysis: "Sharp focus throughout, slight rack focus at 1:15",
+          audioLevels: "Dialogue clear, ambient levels appropriate",
+          technicalIssues: ["Minor camera shake at 1:20-1:25"],
+          suggestions: [
+            "Consider color grading to enhance mood",
+            "Audio could benefit from slight EQ boost",
+            "Excellent performance - recommend as hero take",
+          ],
+          transcription: "I never thought I'd see you again. After all these years...",
+        },
+        syncStatus: "synced",
+        location: "Studio A - Interior Office Set",
+        weather: "Controlled Environment",
+        notes: "Great performance from both actors. Consider this the hero take for the scene.",
+      },
+      {
+        id: "clip-2",
+        filename: "SC012_T002_CAM-B_WIDE.mov",
+        scene: "Scene 12",
+        take: 2,
+        camera: "Camera B",
+        duration: 165,
+        timecode: "01:23:42:08",
+        shootingDate: "2024-03-15",
+        director: "Sarah Chen",
+        dp: "Alex Kim",
+        status: "reviewed",
+        thumbnail: "/placeholder.svg?height=200&width=300",
+        videoUrl: "/sample-video-2.mp4",
+        proxyUrl: "/sample-proxy-2.mp4",
+        metadata: {
+          resolution: "4K (4096x2160)",
+          fps: 24,
+          codec: "ProRes 422 HQ",
+          fileSize: 1.8 * 1024 * 1024 * 1024,
+          colorSpace: "Rec. 709",
+          lens: "24-70mm f/2.8",
+          iso: 800,
+          aperture: "f/4.0",
+          shutterSpeed: "1/48",
+        },
+        comments: [
+          {
+            id: "comment-3",
+            user: "Michael Torres",
+            avatar: "MT",
+            role: "Producer",
+            timestamp: 30,
+            timecode: "00:00:30:00",
+            comment: "Good coverage angle, this will cut well with the master.",
+            type: "approval",
+            priority: "low",
+            status: "acknowledged",
+            createdAt: "2024-03-15T16:00:00Z",
+            replies: [],
+          },
+        ],
+        ratings: [
+          {
+            user: "Emma Davis",
+            role: "Editor",
+            rating: 4,
+            category: "overall",
+            notes: "Solid coverage, good for cutting.",
+            createdAt: "2024-03-15T16:15:00Z",
+          },
+        ],
+        tags: ["coverage", "wide-shot", "interior"],
+        aiAnalysis: {
+          qualityScore: 87,
+          exposureAnalysis: "Slightly underexposed, recoverable in post",
+          focusAnalysis: "Sharp focus, good depth of field",
+          audioLevels: "Good dialogue clarity, room tone present",
+          technicalIssues: ["Slight underexposure", "Minor lens flare at 0:45"],
+          suggestions: ["Increase exposure by 0.3 stops in color correction", "Good for intercutting with master shot"],
+        },
+        syncStatus: "synced",
+        location: "Studio A - Interior Office Set",
+        weather: "Controlled Environment",
+        notes: "Good coverage angle for editing.",
+      },
+      {
+        id: "clip-3",
+        filename: "SC015_T001_CAM-A_ACTION.mov",
+        scene: "Scene 15",
+        take: 1,
+        camera: "Camera A",
+        duration: 240,
+        timecode: "02:15:30:00",
+        shootingDate: "2024-03-15",
+        director: "Sarah Chen",
+        dp: "Alex Kim",
+        status: "flagged",
+        thumbnail: "/placeholder.svg?height=200&width=300",
+        videoUrl: "/sample-video-3.mp4",
+        proxyUrl: "/sample-proxy-3.mp4",
+        metadata: {
+          resolution: "4K (4096x2160)",
+          fps: 24,
+          codec: "ProRes 422 HQ",
+          fileSize: 3.2 * 1024 * 1024 * 1024,
+          colorSpace: "Rec. 709",
+          lens: "85mm f/1.8",
+          iso: 1600,
+          aperture: "f/2.8",
+          shutterSpeed: "1/48",
+        },
+        comments: [
+          {
+            id: "comment-4",
+            user: "Tom Wilson",
+            avatar: "TW",
+            role: "Stunt Coordinator",
+            timestamp: 180,
+            timecode: "00:03:00:00",
+            comment: "Safety concern - actor too close to practical explosion. Need to reshoot.",
+            type: "issue",
+            priority: "high",
+            status: "open",
+            createdAt: "2024-03-15T17:30:00Z",
+            replies: [
+              {
+                id: "reply-2",
+                user: "Sarah Chen",
+                avatar: "SC",
+                comment: "Agreed, let's schedule a pickup shot with better safety distance.",
+                createdAt: "2024-03-15T17:35:00Z",
+              },
+            ],
+          },
+        ],
+        ratings: [],
+        tags: ["action", "stunt", "safety-concern", "reshoot-needed"],
+        aiAnalysis: {
+          qualityScore: 76,
+          exposureAnalysis: "High ISO noise visible, acceptable for action sequence",
+          focusAnalysis: "Motion blur present, appropriate for action",
+          audioLevels: "Loud practical effects, dialogue may need ADR",
+          technicalIssues: ["High ISO noise", "Motion blur", "Safety protocol violation"],
+          suggestions: [
+            "Noise reduction required in post",
+            "Consider ADR for dialogue clarity",
+            "Safety review required before approval",
+          ],
+        },
+        syncStatus: "synced",
+        location: "Warehouse - Practical Location",
+        weather: "Clear, 72°F",
+        notes: "Action sequence with practical effects. Safety concerns noted.",
+      },
+    ]
+
+    if (projectId === "2") {
+      initialDailiesClips.pop();
+      initialDailiesClips.forEach(clip => clip.scene = "Scene 20");
+    } else if (projectId === "3") {
+      initialDailiesClips.shift();
+      initialDailiesClips.forEach(clip => clip.scene = "Scene 99");
+    }
+
+    MOCK_DAILIES_STORE[projectId] = initialDailiesClips;
+    setDailiesClips(initialDailiesClips);
+    if (initialDailiesClips.length > 0) {
+      setSelectedClip(initialDailiesClips[0]);
+    }
+  }, [projectId])
+
+  useEffect(() => {
+    if (dailiesClips.length > 0 && projectId) {
+      MOCK_DAILIES_STORE[projectId] = dailiesClips;
+    }
+  }, [dailiesClips, projectId])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -620,9 +652,8 @@ export default function DailiesReviewModule() {
           <button
             key={tab.id}
             onClick={() => setActiveView(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
-              activeView === tab.id ? "bg-white/20 text-white" : "text-white/70 hover:text-white hover:bg-white/10"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${activeView === tab.id ? "bg-white/20 text-white" : "text-white/70 hover:text-white hover:bg-white/10"
+              }`}
           >
             <tab.icon className="h-4 w-4" />
             {tab.label}
@@ -662,25 +693,22 @@ export default function DailiesReviewModule() {
                 <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-lg p-1">
                   <button
                     onClick={() => setDeviceView("desktop")}
-                    className={`p-2 rounded transition-colors ${
-                      deviceView === "desktop" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-                    }`}
+                    className={`p-2 rounded transition-colors ${deviceView === "desktop" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                      }`}
                   >
                     <Monitor className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => setDeviceView("tablet")}
-                    className={`p-2 rounded transition-colors ${
-                      deviceView === "tablet" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-                    }`}
+                    className={`p-2 rounded transition-colors ${deviceView === "tablet" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                      }`}
                   >
                     <Tablet className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => setDeviceView("mobile")}
-                    className={`p-2 rounded transition-colors ${
-                      deviceView === "mobile" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-                    }`}
+                    className={`p-2 rounded transition-colors ${deviceView === "mobile" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                      }`}
                   >
                     <Smartphone className="h-4 w-4" />
                   </button>
@@ -692,20 +720,18 @@ export default function DailiesReviewModule() {
               {/* Clips Grid */}
               <div className="lg:col-span-2">
                 <div
-                  className={`grid gap-4 ${
-                    deviceView === "mobile"
-                      ? "grid-cols-1"
-                      : deviceView === "tablet"
-                        ? "grid-cols-2"
-                        : "grid-cols-2 xl:grid-cols-3"
-                  }`}
+                  className={`grid gap-4 ${deviceView === "mobile"
+                    ? "grid-cols-1"
+                    : deviceView === "tablet"
+                      ? "grid-cols-2"
+                      : "grid-cols-2 xl:grid-cols-3"
+                    }`}
                 >
                   {filteredClips.map((clip) => (
                     <div
                       key={clip.id}
-                      className={`bg-white/5 rounded-lg border border-white/10 overflow-hidden hover:bg-white/10 transition-colors cursor-pointer ${
-                        selectedClip?.id === clip.id ? "ring-2 ring-blue-400" : ""
-                      }`}
+                      className={`bg-white/5 rounded-lg border border-white/10 overflow-hidden hover:bg-white/10 transition-colors cursor-pointer ${selectedClip?.id === clip.id ? "ring-2 ring-blue-400" : ""
+                        }`}
                       onClick={() => setSelectedClip(clip)}
                     >
                       <div className="aspect-video bg-black/30 relative">

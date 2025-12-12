@@ -72,7 +72,9 @@ interface AIBudgetSuggestion {
   lineItems?: string[]
 }
 
-export default function BudgetModule({ searchQuery = "" }: { searchQuery?: string }) {
+const MOCK_STORE: Record<string, BudgetCategory[]> = {}
+
+export default function BudgetModule({ searchQuery = "", projectId = "1" }: { searchQuery?: string; projectId?: string }) {
   const [budgetData, setBudgetData] = useState<BudgetCategory[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [editingItem, setEditingItem] = useState<string | null>(null)
@@ -87,6 +89,13 @@ export default function BudgetModule({ searchQuery = "" }: { searchQuery?: strin
 
   // Initialize budget data based on the PDF structure
   useEffect(() => {
+    if (MOCK_STORE[projectId]) {
+      setBudgetData(MOCK_STORE[projectId])
+      setExpandedCategories(new Set(["pre-production", "production"]))
+      generateAISuggestions(MOCK_STORE[projectId])
+      return
+    }
+
     const initialBudgetData: BudgetCategory[] = [
       {
         id: "pre-production",
@@ -396,12 +405,42 @@ export default function BudgetModule({ searchQuery = "" }: { searchQuery?: strin
       },
     ]
 
+    // Customize for different projects
+    if (projectId === "2") {
+      initialBudgetData.forEach(cat => {
+        cat.estimatedTotal = Math.round(cat.estimatedTotal * 0.7);
+        cat.actualTotal = Math.round(cat.actualTotal * 0.7);
+        cat.items.forEach(item => {
+          item.estimatedTotal = Math.round(item.estimatedTotal * 0.7);
+          item.actualTotal = Math.round(item.actualTotal * 0.7);
+        });
+      });
+    } else if (projectId === "3") {
+      initialBudgetData.forEach(cat => {
+        cat.estimatedTotal = Math.round(cat.estimatedTotal * 0.4);
+        cat.actualTotal = Math.round(cat.actualTotal * 0.4);
+        cat.items.forEach(item => {
+          item.estimatedTotal = Math.round(item.estimatedTotal * 0.4);
+          item.actualTotal = Math.round(item.actualTotal * 0.4);
+        });
+      });
+    }
+
+    MOCK_STORE[projectId] = initialBudgetData // Store it
+
     setBudgetData(initialBudgetData)
     setExpandedCategories(new Set(["pre-production", "production"]))
 
     // Generate initial AI suggestions
     generateAISuggestions(initialBudgetData)
-  }, [])
+  }, [projectId])
+
+  // Sync back to store on change
+  useEffect(() => {
+    if (budgetData.length > 0 && projectId) {
+      MOCK_STORE[projectId] = budgetData;
+    }
+  }, [budgetData, projectId]);
 
   // Add this useEffect after the existing useEffect for initializing budget data
   useEffect(() => {
@@ -511,17 +550,17 @@ export default function BudgetModule({ searchQuery = "" }: { searchQuery?: strin
       prev.map((category) =>
         category.id === categoryId
           ? {
-              ...category,
-              items: category.items.map((item) =>
-                item.id === itemId
-                  ? {
-                      ...item,
-                      ...updates,
-                      lastUpdated: new Date().toISOString(),
-                    }
-                  : item,
-              ),
-            }
+            ...category,
+            items: category.items.map((item) =>
+              item.id === itemId
+                ? {
+                  ...item,
+                  ...updates,
+                  lastUpdated: new Date().toISOString(),
+                }
+                : item,
+            ),
+          }
           : category,
       ),
     )
@@ -549,9 +588,9 @@ export default function BudgetModule({ searchQuery = "" }: { searchQuery?: strin
       prev.map((cat) =>
         cat.id === categoryId
           ? {
-              ...cat,
-              items: [...cat.items, newItem],
-            }
+            ...cat,
+            items: [...cat.items, newItem],
+          }
           : cat,
       ),
     )
@@ -907,25 +946,22 @@ export default function BudgetModule({ searchQuery = "" }: { searchQuery?: strin
           <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1 border border-white/20">
             <button
               onClick={() => setViewMode("detailed")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "detailed" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "detailed" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               Detailed
             </button>
             <button
               onClick={() => setViewMode("summary")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "summary" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "summary" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               Summary
             </button>
             <button
               onClick={() => setViewMode("comparison")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "comparison" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "comparison" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               Comparison
             </button>

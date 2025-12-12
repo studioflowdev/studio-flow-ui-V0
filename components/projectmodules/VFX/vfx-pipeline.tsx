@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Zap,
   Plus,
@@ -60,155 +60,185 @@ interface VFXPipelineProps {
     assignee?: string
     shotType?: string
   }
+  projectId?: string
 }
+
+const MOCK_VFX_STORE: Record<string, VFXShot[]> = {}
 
 export default function VFXPipeline({
   searchQuery = "",
   filters = { status: "all", priority: "all", assignee: "all", shotType: "all" },
+  projectId = "1",
 }: VFXPipelineProps) {
   const [selectedShot, setSelectedShot] = useState<VFXShot | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "list" | "kanban">("kanban")
   const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "progress" | "name">("dueDate")
+  const [vfxShots, setVfxShots] = useState<VFXShot[]>([])
 
-  const vfxShots: VFXShot[] = [
-    {
-      id: 1,
-      name: "Hero Flight Sequence",
-      description: "Superhero flying through the city with cape physics and environment interaction",
-      status: "in progress",
-      priority: "high",
-      dueDate: "2024-03-15",
-      assignee: "John Doe",
-      estimatedHours: 40,
-      actualHours: 25,
-      progress: 65,
-      complexity: "complex",
-      shotType: "cgi",
-      frameRange: "1001-1120",
-      resolution: "4K (4096x2160)",
-      frameRate: "24fps",
-      software: ["Maya", "Houdini", "Nuke"],
-      tags: ["hero", "flight", "city", "cape physics", "environment"],
-      notes: "Complex cape simulation required. City environment needs detailed lighting.",
-      createdBy: "VFX Supervisor",
-      createdAt: "2024-01-10",
-      lastModified: "2024-01-20",
-      reviewNotes: "Cape physics looking good, need to adjust city lighting",
-      previewUrl: "/previews/hero_flight_v003.mp4",
-      dependencies: ["City Environment Model", "Hero Rig"],
-      budget: 15000,
-      client: "Marvel Studios",
-    },
-    {
-      id: 2,
-      name: "Explosion Composite",
-      description: "Large-scale explosion with debris and smoke simulation",
-      status: "review",
-      priority: "medium",
-      dueDate: "2024-03-22",
-      assignee: "Jane Smith",
-      estimatedHours: 24,
-      actualHours: 22,
-      progress: 90,
-      complexity: "medium",
-      shotType: "compositing",
-      frameRange: "2001-2080",
-      resolution: "2K (2048x1080)",
-      frameRate: "24fps",
-      software: ["Nuke", "Houdini", "After Effects"],
-      tags: ["explosion", "debris", "smoke", "destruction"],
-      notes: "Practical explosion plate needs enhancement with CG elements.",
-      createdBy: "Compositing Lead",
-      createdAt: "2024-01-12",
-      lastModified: "2024-01-22",
-      reviewNotes: "Explosion timing perfect, debris needs more variation",
-      previewUrl: "/previews/explosion_comp_v005.mp4",
-      dependencies: ["Practical Explosion Plate"],
-      budget: 8000,
-      client: "Warner Bros",
-    },
-    {
-      id: 3,
-      name: "Character Face Replacement",
-      description: "Digital face replacement for stunt double in close-up shots",
-      status: "pending",
-      priority: "urgent",
-      dueDate: "2024-03-29",
-      assignee: "Peter Jones",
-      estimatedHours: 32,
-      progress: 0,
-      complexity: "extreme",
-      shotType: "cleanup",
-      frameRange: "3001-3150",
-      resolution: "4K (4096x2160)",
-      frameRate: "24fps",
-      software: ["Nuke", "Maya", "Mari"],
-      tags: ["face replacement", "digital double", "close-up", "performance"],
-      notes: "High-resolution face scan available. Requires precise tracking and lighting match.",
-      createdBy: "Digital Human Specialist",
-      createdAt: "2024-01-15",
-      lastModified: "2024-01-15",
-      dependencies: ["Face Scan Data", "Performance Capture"],
-      budget: 25000,
-      client: "Disney",
-    },
-    {
-      id: 4,
-      name: "Matte Painting Extension",
-      description: "Digital environment extension for establishing shot of alien planet",
-      status: "completed",
-      priority: "low",
-      dueDate: "2024-02-28",
-      assignee: "Alice Brown",
-      estimatedHours: 16,
-      actualHours: 18,
-      progress: 100,
-      complexity: "simple",
-      shotType: "compositing",
-      frameRange: "4001-4001",
-      resolution: "8K (8192x4320)",
-      frameRate: "24fps",
-      software: ["Photoshop", "Nuke", "Terragen"],
-      tags: ["matte painting", "environment", "alien planet", "establishing shot"],
-      notes: "Single frame matte painting for wide establishing shot.",
-      createdBy: "Matte Painter",
-      createdAt: "2024-01-08",
-      lastModified: "2024-02-25",
-      reviewNotes: "Approved - excellent work on atmospheric perspective",
-      finalUrl: "/finals/alien_planet_matte_final.exr",
-      budget: 5000,
-      client: "Paramount",
-    },
-    {
-      id: 5,
-      name: "Creature Animation",
-      description: "Full CG creature performance with facial animation and fur simulation",
-      status: "in progress",
-      priority: "high",
-      dueDate: "2024-04-10",
-      assignee: "Bob Williams",
-      estimatedHours: 60,
-      actualHours: 35,
-      progress: 45,
-      complexity: "extreme",
-      shotType: "3d animation",
-      frameRange: "5001-5240",
-      resolution: "4K (4096x2160)",
-      frameRate: "24fps",
-      software: ["Maya", "Houdini", "Arnold", "Nuke"],
-      tags: ["creature", "animation", "facial", "fur simulation", "performance"],
-      notes: "Complex creature with detailed facial expressions and full-body fur simulation.",
-      createdBy: "Animation Director",
-      createdAt: "2024-01-05",
-      lastModified: "2024-01-25",
-      reviewNotes: "Animation performance strong, fur simulation needs refinement",
-      previewUrl: "/previews/creature_anim_v002.mp4",
-      dependencies: ["Creature Rig", "Fur Groom"],
-      budget: 35000,
-      client: "Universal",
-    },
-  ]
+  useEffect(() => {
+    if (MOCK_VFX_STORE[projectId]) {
+      setVfxShots(MOCK_VFX_STORE[projectId])
+      return
+    }
+
+    const initialVfxShots: VFXShot[] = [
+      {
+        id: 1,
+        name: "Hero Flight Sequence",
+        description: "Superhero flying through the city with cape physics and environment interaction",
+        status: "in progress",
+        priority: "high",
+        dueDate: "2024-03-15",
+        assignee: "John Doe",
+        estimatedHours: 40,
+        actualHours: 25,
+        progress: 65,
+        complexity: "complex",
+        shotType: "cgi",
+        frameRange: "1001-1120",
+        resolution: "4K (4096x2160)",
+        frameRate: "24fps",
+        software: ["Maya", "Houdini", "Nuke"],
+        tags: ["hero", "flight", "city", "cape physics", "environment"],
+        notes: "Complex cape simulation required. City environment needs detailed lighting.",
+        createdBy: "VFX Supervisor",
+        createdAt: "2024-01-10",
+        lastModified: "2024-01-20",
+        reviewNotes: "Cape physics looking good, need to adjust city lighting",
+        previewUrl: "/previews/hero_flight_v003.mp4",
+        dependencies: ["City Environment Model", "Hero Rig"],
+        budget: 15000,
+        client: "Marvel Studios",
+      },
+      {
+        id: 2,
+        name: "Explosion Composite",
+        description: "Large-scale explosion with debris and smoke simulation",
+        status: "review",
+        priority: "medium",
+        dueDate: "2024-03-22",
+        assignee: "Jane Smith",
+        estimatedHours: 24,
+        actualHours: 22,
+        progress: 90,
+        complexity: "medium",
+        shotType: "compositing",
+        frameRange: "2001-2080",
+        resolution: "2K (2048x1080)",
+        frameRate: "24fps",
+        software: ["Nuke", "Houdini", "After Effects"],
+        tags: ["explosion", "debris", "smoke", "destruction"],
+        notes: "Practical explosion plate needs enhancement with CG elements.",
+        createdBy: "Compositing Lead",
+        createdAt: "2024-01-12",
+        lastModified: "2024-01-22",
+        reviewNotes: "Explosion timing perfect, debris needs more variation",
+        previewUrl: "/previews/explosion_comp_v005.mp4",
+        dependencies: ["Practical Explosion Plate"],
+        budget: 8000,
+        client: "Warner Bros",
+      },
+      {
+        id: 3,
+        name: "Character Face Replacement",
+        description: "Digital face replacement for stunt double in close-up shots",
+        status: "pending",
+        priority: "urgent",
+        dueDate: "2024-03-29",
+        assignee: "Peter Jones",
+        estimatedHours: 32,
+        progress: 0,
+        complexity: "extreme",
+        shotType: "cleanup",
+        frameRange: "3001-3150",
+        resolution: "4K (4096x2160)",
+        frameRate: "24fps",
+        software: ["Nuke", "Maya", "Mari"],
+        tags: ["face replacement", "digital double", "close-up", "performance"],
+        notes: "High-resolution face scan available. Requires precise tracking and lighting match.",
+        createdBy: "Digital Human Specialist",
+        createdAt: "2024-01-15",
+        lastModified: "2024-01-15",
+        dependencies: ["Face Scan Data", "Performance Capture"],
+        budget: 25000,
+        client: "Disney",
+      },
+      {
+        id: 4,
+        name: "Matte Painting Extension",
+        description: "Digital environment extension for establishing shot of alien planet",
+        status: "completed",
+        priority: "low",
+        dueDate: "2024-02-28",
+        assignee: "Alice Brown",
+        estimatedHours: 16,
+        actualHours: 18,
+        progress: 100,
+        complexity: "simple",
+        shotType: "compositing",
+        frameRange: "4001-4001",
+        resolution: "8K (8192x4320)",
+        frameRate: "24fps",
+        software: ["Photoshop", "Nuke", "Terragen"],
+        tags: ["matte painting", "environment", "alien planet", "establishing shot"],
+        notes: "Single frame matte painting for wide establishing shot.",
+        createdBy: "Matte Painter",
+        createdAt: "2024-01-08",
+        lastModified: "2024-02-25",
+        reviewNotes: "Approved - excellent work on atmospheric perspective",
+        finalUrl: "/finals/alien_planet_matte_final.exr",
+        budget: 5000,
+        client: "Paramount",
+      },
+      {
+        id: 5,
+        name: "Creature Animation",
+        description: "Full CG creature performance with facial animation and fur simulation",
+        status: "in progress",
+        priority: "high",
+        dueDate: "2024-04-10",
+        assignee: "Bob Williams",
+        estimatedHours: 60,
+        actualHours: 35,
+        progress: 45,
+        complexity: "extreme",
+        shotType: "3d animation",
+        frameRange: "5001-5240",
+        resolution: "4K (4096x2160)",
+        frameRate: "24fps",
+        software: ["Maya", "Houdini", "Arnold", "Nuke"],
+        tags: ["creature", "animation", "facial", "fur simulation", "performance"],
+        notes: "Complex creature with detailed facial expressions and full-body fur simulation.",
+        createdBy: "Animation Director",
+        createdAt: "2024-01-05",
+        lastModified: "2024-01-25",
+        reviewNotes: "Animation performance strong, fur simulation needs refinement",
+        previewUrl: "/previews/creature_anim_v002.mp4",
+        dependencies: ["Creature Rig", "Fur Groom"],
+        budget: 35000,
+        client: "Universal",
+      },
+    ]
+
+    if (projectId === "2") {
+      initialVfxShots.pop();
+      initialVfxShots[0].name = "Spaceship Battle";
+      initialVfxShots[0].shotType = "cgi";
+    } else if (projectId === "3") {
+      initialVfxShots.shift();
+      initialVfxShots[0].status = "completed";
+    }
+
+    MOCK_VFX_STORE[projectId] = initialVfxShots;
+    setVfxShots(initialVfxShots);
+  }, [projectId])
+
+  useEffect(() => {
+    if (vfxShots.length > 0 && projectId) {
+      MOCK_VFX_STORE[projectId] = vfxShots;
+    }
+  }, [vfxShots, projectId])
 
   const filteredShots = vfxShots.filter((shot) => {
     const matchesSearch =
@@ -378,25 +408,22 @@ export default function VFXPipeline({
           <div className="flex items-center gap-2 bg-white/10 rounded-lg p-1">
             <button
               onClick={() => setViewMode("kanban")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "kanban" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "kanban" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               Kanban
             </button>
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <Grid3X3 className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <List className="h-4 w-4" />
             </button>

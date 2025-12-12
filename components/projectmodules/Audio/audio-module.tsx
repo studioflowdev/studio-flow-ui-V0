@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Music,
   Plus,
@@ -63,11 +63,15 @@ interface AudioModuleProps {
     status: string
     genre?: string
   }
+  projectId?: string
 }
+
+const MOCK_AUDIO_STORE: Record<string, AudioTrack[]> = {}
 
 export default function AudioModule({
   searchQuery = "",
   filters = { type: "all", status: "all", genre: "all" },
+  projectId = "1",
 }: AudioModuleProps) {
   const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null)
   const [playingTrack, setPlayingTrack] = useState<number | null>(null)
@@ -75,115 +79,143 @@ export default function AudioModule({
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
   const [volume, setVolume] = useState(75)
   const [isShuffled, setIsShuffled] = useState(false)
-  const [repeatMode, setRepeatMode] = useState<"none" | "one" | "all">("none")
 
-  const audioTracks: AudioTrack[] = [
-    {
-      id: 1,
-      name: "Epic Orchestral Theme",
-      type: "music",
-      status: "active",
-      duration: "3:45",
-      fileSize: "8.2 MB",
-      format: "WAV",
-      sampleRate: "48 kHz",
-      bitRate: "1411 kbps",
-      artist: "John Williams",
-      album: "Film Scores Vol. 1",
-      genre: "Orchestral",
-      bpm: 120,
-      key: "C Major",
-      mood: "Epic",
-      tags: ["orchestral", "epic", "cinematic", "heroic", "adventure"],
-      createdBy: "Audio Team",
-      createdAt: "2024-01-15",
-      lastModified: "2024-01-16",
-      filePath: "/audio/epic_orchestral_theme.wav",
-      notes: "Perfect for opening sequence and hero moments",
-      isFavorite: true,
-    },
-    {
-      id: 2,
-      name: "Ambient Forest Sounds",
-      type: "ambient",
-      status: "active",
-      duration: "10:30",
-      fileSize: "15.6 MB",
-      format: "MP3",
-      sampleRate: "44.1 kHz",
-      bitRate: "320 kbps",
-      genre: "Ambient",
-      mood: "Peaceful",
-      tags: ["ambient", "nature", "forest", "peaceful", "background"],
-      createdBy: "Sound Designer",
-      createdAt: "2024-01-14",
-      lastModified: "2024-01-14",
-      filePath: "/audio/ambient_forest.mp3",
-      notes: "Great for outdoor scenes and establishing shots",
-      isFavorite: false,
-    },
-    {
-      id: 3,
-      name: "Character Dialogue - Scene 5",
-      type: "dialogue",
-      status: "processing",
-      duration: "2:15",
-      fileSize: "4.1 MB",
-      format: "WAV",
-      sampleRate: "48 kHz",
-      bitRate: "1411 kbps",
-      tags: ["dialogue", "character", "scene5", "drama"],
-      createdBy: "Recording Engineer",
-      createdAt: "2024-01-13",
-      lastModified: "2024-01-15",
-      filePath: "/audio/dialogue_scene5.wav",
-      notes: "Needs noise reduction and EQ adjustment",
-      isFavorite: false,
-    },
-    {
-      id: 4,
-      name: "Action Sequence SFX",
-      type: "sfx",
-      status: "active",
-      duration: "1:20",
-      fileSize: "3.8 MB",
-      format: "WAV",
-      sampleRate: "96 kHz",
-      bitRate: "2822 kbps",
-      genre: "Sound Effects",
-      tags: ["sfx", "action", "explosions", "gunshots", "impact"],
-      createdBy: "SFX Library",
-      createdAt: "2024-01-12",
-      lastModified: "2024-01-12",
-      filePath: "/audio/action_sfx.wav",
-      notes: "High-quality action sound effects collection",
-      isFavorite: true,
-    },
-    {
-      id: 5,
-      name: "Romantic Piano Melody",
-      type: "music",
-      status: "active",
-      duration: "4:22",
-      fileSize: "9.8 MB",
-      format: "FLAC",
-      sampleRate: "48 kHz",
-      bitRate: "1536 kbps",
-      artist: "Sarah Chen",
-      album: "Intimate Moments",
-      genre: "Classical",
-      bpm: 72,
-      key: "F Major",
-      mood: "Romantic",
-      tags: ["piano", "romantic", "emotional", "intimate", "classical"],
-      createdBy: "Composer",
-      createdAt: "2024-01-11",
-      lastModified: "2024-01-11",
-      filePath: "/audio/romantic_piano.flac",
-      notes: "Perfect for love scenes and emotional moments",
-      isFavorite: true,
-    },
-  ]
+
+  const [repeatMode, setRepeatMode] = useState<"none" | "one" | "all">("none")
+  const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([])
+
+  useEffect(() => {
+    if (MOCK_AUDIO_STORE[projectId]) {
+      setAudioTracks(MOCK_AUDIO_STORE[projectId])
+      return
+    }
+
+    const initialAudioTracks: AudioTrack[] = [
+      {
+        id: 1,
+        name: "Epic Orchestral Theme",
+        type: "music",
+        status: "active",
+        duration: "3:45",
+        fileSize: "8.2 MB",
+        format: "WAV",
+        sampleRate: "48 kHz",
+        bitRate: "1411 kbps",
+        artist: "John Williams",
+        album: "Film Scores Vol. 1",
+        genre: "Orchestral",
+        bpm: 120,
+        key: "C Major",
+        mood: "Epic",
+        tags: ["orchestral", "epic", "cinematic", "heroic", "adventure"],
+        createdBy: "Audio Team",
+        createdAt: "2024-01-15",
+        lastModified: "2024-01-16",
+        filePath: "/audio/epic_orchestral_theme.wav",
+        notes: "Perfect for opening sequence and hero moments",
+        isFavorite: true,
+      },
+      {
+        id: 2,
+        name: "Ambient Forest Sounds",
+        type: "ambient",
+        status: "active",
+        duration: "10:30",
+        fileSize: "15.6 MB",
+        format: "MP3",
+        sampleRate: "44.1 kHz",
+        bitRate: "320 kbps",
+        genre: "Ambient",
+        mood: "Peaceful",
+        tags: ["ambient", "nature", "forest", "peaceful", "background"],
+        createdBy: "Sound Designer",
+        createdAt: "2024-01-14",
+        lastModified: "2024-01-14",
+        filePath: "/audio/ambient_forest.mp3",
+        notes: "Great for outdoor scenes and establishing shots",
+        isFavorite: false,
+      },
+      {
+        id: 3,
+        name: "Character Dialogue - Scene 5",
+        type: "dialogue",
+        status: "processing",
+        duration: "2:15",
+        fileSize: "4.1 MB",
+        format: "WAV",
+        sampleRate: "48 kHz",
+        bitRate: "1411 kbps",
+        tags: ["dialogue", "character", "scene5", "drama"],
+        createdBy: "Recording Engineer",
+        createdAt: "2024-01-13",
+        lastModified: "2024-01-15",
+        filePath: "/audio/dialogue_scene5.wav",
+        notes: "Needs noise reduction and EQ adjustment",
+        isFavorite: false,
+      },
+      {
+        id: 4,
+        name: "Action Sequence SFX",
+        type: "sfx",
+        status: "active",
+        duration: "1:20",
+        fileSize: "3.8 MB",
+        format: "WAV",
+        sampleRate: "96 kHz",
+        bitRate: "2822 kbps",
+        genre: "Sound Effects",
+        tags: ["sfx", "action", "explosions", "gunshots", "impact"],
+        createdBy: "SFX Library",
+        createdAt: "2024-01-12",
+        lastModified: "2024-01-12",
+        filePath: "/audio/action_sfx.wav",
+        notes: "High-quality action sound effects collection",
+        isFavorite: true,
+      },
+      {
+        id: 5,
+        name: "Romantic Piano Melody",
+        type: "music",
+        status: "active",
+        duration: "4:22",
+        fileSize: "9.8 MB",
+        format: "FLAC",
+        sampleRate: "48 kHz",
+        bitRate: "1536 kbps",
+        artist: "Sarah Chen",
+        album: "Intimate Moments",
+        genre: "Classical",
+        bpm: 72,
+        key: "F Major",
+        mood: "Romantic",
+        tags: ["piano", "romantic", "emotional", "intimate", "classical"],
+        createdBy: "Composer",
+        createdAt: "2024-01-11",
+        lastModified: "2024-01-11",
+        filePath: "/audio/romantic_piano.flac",
+        notes: "Perfect for love scenes and emotional moments",
+        isFavorite: true,
+      },
+    ]
+
+    if (projectId === "2") {
+      initialAudioTracks.pop();
+      initialAudioTracks[0].name = "Sci-Fi Theme";
+      initialAudioTracks[0].genre = "Electronic";
+    } else if (projectId === "3") {
+      initialAudioTracks.shift();
+      initialAudioTracks[0].isFavorite = true;
+    }
+
+    MOCK_AUDIO_STORE[projectId] = initialAudioTracks;
+    setAudioTracks(initialAudioTracks);
+  }, [projectId])
+
+  useEffect(() => {
+    if (audioTracks.length > 0 && projectId) {
+      MOCK_AUDIO_STORE[projectId] = audioTracks;
+    }
+  }, [audioTracks, projectId])
 
   const filteredTracks = audioTracks.filter((track) => {
     const matchesSearch =
@@ -329,9 +361,8 @@ export default function AudioModule({
             </button>
             <button
               onClick={() => setIsShuffled(!isShuffled)}
-              className={`p-2 rounded-lg transition-colors ${
-                isShuffled ? "bg-blue-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"
-              }`}
+              className={`p-2 rounded-lg transition-colors ${isShuffled ? "bg-blue-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"
+                }`}
             >
               <Shuffle className="h-4 w-4" />
             </button>
@@ -341,9 +372,8 @@ export default function AudioModule({
                 const currentIndex = modes.indexOf(repeatMode)
                 setRepeatMode(modes[(currentIndex + 1) % modes.length])
               }}
-              className={`p-2 rounded-lg transition-colors ${
-                repeatMode !== "none" ? "bg-blue-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"
-              }`}
+              className={`p-2 rounded-lg transition-colors ${repeatMode !== "none" ? "bg-blue-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"
+                }`}
             >
               <Repeat className="h-4 w-4" />
             </button>

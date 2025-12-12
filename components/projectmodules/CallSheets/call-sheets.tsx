@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   FileText,
   Plus,
@@ -89,253 +89,282 @@ interface CallSheetsProps {
     status: string
     date?: string
   }
+  projectId?: string
 }
 
-export default function CallSheets({ searchQuery = "", filters = { status: "all", date: "all" } }: CallSheetsProps) {
+const MOCK_CALL_STORE: Record<string, CallSheetItem[]> = {}
+
+export default function CallSheets({ searchQuery = "", filters = { status: "all", date: "all" }, projectId = "1" }: CallSheetsProps) {
   const [selectedCallSheet, setSelectedCallSheet] = useState<CallSheetItem | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list")
+  const [callSheets, setCallSheets] = useState<CallSheetItem[]>([])
 
-  const callSheets: CallSheetItem[] = [
-    {
-      id: 1,
-      title: "Day 1 - Hero Introduction Scene",
-      date: "2024-03-15",
-      callTime: "6:00 AM",
-      wrapTime: "8:00 PM",
-      location: "Downtown Office Building",
-      address: "123 Business Ave, Los Angeles, CA 90210",
-      weather: {
-        condition: "Sunny",
-        temperature: "75°F",
-        precipitation: "0%",
+  useEffect(() => {
+    if (MOCK_CALL_STORE[projectId]) {
+      setCallSheets(MOCK_CALL_STORE[projectId])
+      return
+    }
+
+    const initialCallSheets: CallSheetItem[] = [
+      {
+        id: 1,
+        title: "Day 1 - Hero Introduction Scene",
+        date: "2024-03-15",
+        callTime: "6:00 AM",
+        wrapTime: "8:00 PM",
+        location: "Downtown Office Building",
+        address: "123 Business Ave, Los Angeles, CA 90210",
+        weather: {
+          condition: "Sunny",
+          temperature: "75°F",
+          precipitation: "0%",
+        },
+        scenes: ["Scene 1A", "Scene 1B", "Scene 2A"],
+        cast: [
+          {
+            name: "John Doe",
+            character: "Hero",
+            callTime: "6:00 AM",
+            pickupTime: "5:30 AM",
+            notes: "Wardrobe fitting at 6:30 AM",
+          },
+          {
+            name: "Jane Smith",
+            character: "Love Interest",
+            callTime: "10:00 AM",
+            pickupTime: "9:30 AM",
+          },
+        ],
+        crew: [
+          {
+            department: "Camera",
+            members: ["Mike Johnson (DP)", "Sarah Wilson (1st AC)", "Tom Brown (2nd AC)"],
+            callTime: "5:30 AM",
+          },
+          {
+            department: "Sound",
+            members: ["Lisa Davis (Sound Mixer)", "Bob Miller (Boom Op)"],
+            callTime: "6:00 AM",
+          },
+        ],
+        equipment: [
+          {
+            category: "Camera",
+            items: ["RED Komodo 6K", "Zeiss CP.3 Lens Set", "Steadicam"],
+            responsible: "Mike Johnson",
+          },
+          {
+            category: "Lighting",
+            items: ["ARRI SkyPanel S60", "Aputure 300D", "Bounce Boards"],
+            responsible: "Alex Chen",
+          },
+        ],
+        catering: {
+          breakfast: "6:30 AM - Continental breakfast",
+          lunch: "1:00 PM - Hot lunch buffet",
+          craftyLocation: "Basecamp tent",
+        },
+        transportation: {
+          basecamp: "Parking Lot B - 125 Business Ave",
+          parking: "Street parking available on Business Ave",
+          shuttles: ["Shuttle runs every 15 minutes from basecamp to set"],
+        },
+        contacts: [
+          {
+            name: "Director - Peter Jones",
+            role: "Director",
+            phone: "(555) 123-4567",
+            email: "peter.jones@production.com",
+          },
+          {
+            name: "1st AD - Mary Brown",
+            role: "1st Assistant Director",
+            phone: "(555) 987-6543",
+            email: "mary.brown@production.com",
+          },
+        ],
+        notes: "Early morning start. Please arrive on time. Weather looks good for outdoor scenes.",
+        status: "sent",
+        createdBy: "Mary Brown",
+        createdAt: "2024-03-10",
+        lastModified: "2024-03-12",
+        recipients: ["cast@production.com", "crew@production.com"],
       },
-      scenes: ["Scene 1A", "Scene 1B", "Scene 2A"],
-      cast: [
-        {
-          name: "John Doe",
-          character: "Hero",
-          callTime: "6:00 AM",
-          pickupTime: "5:30 AM",
-          notes: "Wardrobe fitting at 6:30 AM",
+      {
+        id: 2,
+        title: "Day 2 - Action Sequence",
+        date: "2024-03-16",
+        callTime: "7:00 AM",
+        wrapTime: "9:00 PM",
+        location: "Warehouse District",
+        address: "456 Industrial Blvd, Los Angeles, CA 90211",
+        weather: {
+          condition: "Partly Cloudy",
+          temperature: "68°F",
+          precipitation: "10%",
         },
-        {
-          name: "Jane Smith",
-          character: "Love Interest",
-          callTime: "10:00 AM",
-          pickupTime: "9:30 AM",
+        scenes: ["Scene 5A", "Scene 5B", "Scene 6A"],
+        cast: [
+          {
+            name: "John Doe",
+            character: "Hero",
+            callTime: "7:00 AM",
+            pickupTime: "6:30 AM",
+            notes: "Stunt rehearsal at 7:30 AM",
+          },
+          {
+            name: "Peter Wilson",
+            character: "Villain",
+            callTime: "9:00 AM",
+            pickupTime: "8:30 AM",
+          },
+        ],
+        crew: [
+          {
+            department: "Stunts",
+            members: ["Jack Thompson (Stunt Coordinator)", "Emma Davis (Stunt Double)"],
+            callTime: "6:30 AM",
+          },
+          {
+            department: "Special Effects",
+            members: ["David Lee (SFX Supervisor)", "Anna Garcia (Pyrotechnician)"],
+            callTime: "7:00 AM",
+          },
+        ],
+        equipment: [
+          {
+            category: "Safety",
+            items: ["Safety Harnesses", "Crash Mats", "Fire Extinguishers"],
+            responsible: "Jack Thompson",
+          },
+          {
+            category: "Special Effects",
+            items: ["Smoke Machines", "Pyrotechnic Charges", "Safety Barriers"],
+            responsible: "David Lee",
+          },
+        ],
+        catering: {
+          breakfast: "7:30 AM - Hot breakfast",
+          lunch: "1:30 PM - BBQ lunch",
+          dinner: "7:00 PM - Dinner boxes",
+          craftyLocation: "Catering truck on Industrial Blvd",
         },
-      ],
-      crew: [
-        {
-          department: "Camera",
-          members: ["Mike Johnson (DP)", "Sarah Wilson (1st AC)", "Tom Brown (2nd AC)"],
-          callTime: "5:30 AM",
+        transportation: {
+          basecamp: "Warehouse parking lot",
+          parking: "Designated crew parking in lot",
+          shuttles: ["No shuttles needed - walking distance"],
         },
-        {
-          department: "Sound",
-          members: ["Lisa Davis (Sound Mixer)", "Bob Miller (Boom Op)"],
-          callTime: "6:00 AM",
-        },
-      ],
-      equipment: [
-        {
-          category: "Camera",
-          items: ["RED Komodo 6K", "Zeiss CP.3 Lens Set", "Steadicam"],
-          responsible: "Mike Johnson",
-        },
-        {
-          category: "Lighting",
-          items: ["ARRI SkyPanel S60", "Aputure 300D", "Bounce Boards"],
-          responsible: "Alex Chen",
-        },
-      ],
-      catering: {
-        breakfast: "6:30 AM - Continental breakfast",
-        lunch: "1:00 PM - Hot lunch buffet",
-        craftyLocation: "Basecamp tent",
+        contacts: [
+          {
+            name: "Stunt Coordinator - Jack Thompson",
+            role: "Stunt Coordinator",
+            phone: "(555) 456-7890",
+            email: "jack.thompson@stunts.com",
+          },
+          {
+            name: "Safety Officer - Lisa Park",
+            role: "Safety Officer",
+            phone: "(555) 321-0987",
+            email: "lisa.park@safety.com",
+          },
+        ],
+        notes: "Action-heavy day with stunts and pyrotechnics. Safety briefing at 7:15 AM mandatory for all crew.",
+        status: "confirmed",
+        createdBy: "Mary Brown",
+        createdAt: "2024-03-11",
+        lastModified: "2024-03-13",
+        recipients: ["cast@production.com", "crew@production.com", "stunts@production.com"],
       },
-      transportation: {
-        basecamp: "Parking Lot B - 125 Business Ave",
-        parking: "Street parking available on Business Ave",
-        shuttles: ["Shuttle runs every 15 minutes from basecamp to set"],
+      {
+        id: 3,
+        title: "Day 3 - Interior Dialogue Scenes",
+        date: "2024-03-17",
+        callTime: "8:00 AM",
+        wrapTime: "6:00 PM",
+        location: "Studio Stage 5",
+        address: "789 Studio Way, Los Angeles, CA 90212",
+        weather: {
+          condition: "Indoor",
+          temperature: "72°F (Climate Controlled)",
+        },
+        scenes: ["Scene 8A", "Scene 8B", "Scene 9A", "Scene 10A"],
+        cast: [
+          {
+            name: "Jane Smith",
+            character: "Love Interest",
+            callTime: "8:00 AM",
+            notes: "Hair and makeup at 8:30 AM",
+          },
+          {
+            name: "Bob Williams",
+            character: "Mentor",
+            callTime: "10:00 AM",
+          },
+        ],
+        crew: [
+          {
+            department: "Camera",
+            members: ["Mike Johnson (DP)", "Sarah Wilson (1st AC)"],
+            callTime: "7:30 AM",
+          },
+          {
+            department: "Lighting",
+            members: ["Alex Chen (Gaffer)", "Chris Taylor (Best Boy)"],
+            callTime: "7:00 AM",
+          },
+        ],
+        equipment: [
+          {
+            category: "Camera",
+            items: ["ARRI Alexa Mini", "Master Prime Lenses", "Dolly Track"],
+            responsible: "Mike Johnson",
+          },
+        ],
+        catering: {
+          breakfast: "8:30 AM - Continental breakfast",
+          lunch: "1:00 PM - Catered lunch",
+          craftyLocation: "Stage 5 craft services area",
+        },
+        transportation: {
+          basecamp: "Studio parking structure",
+          parking: "Assigned parking spaces",
+          shuttles: ["Golf cart available for equipment transport"],
+        },
+        contacts: [
+          {
+            name: "Stage Manager - Tom Wilson",
+            role: "Stage Manager",
+            phone: "(555) 654-3210",
+            email: "tom.wilson@studio.com",
+          },
+        ],
+        notes: "Controlled studio environment. Multiple dialogue scenes scheduled.",
+        status: "draft",
+        createdBy: "Mary Brown",
+        createdAt: "2024-03-12",
+        lastModified: "2024-03-12",
       },
-      contacts: [
-        {
-          name: "Director - Peter Jones",
-          role: "Director",
-          phone: "(555) 123-4567",
-          email: "peter.jones@production.com",
-        },
-        {
-          name: "1st AD - Mary Brown",
-          role: "1st Assistant Director",
-          phone: "(555) 987-6543",
-          email: "mary.brown@production.com",
-        },
-      ],
-      notes: "Early morning start. Please arrive on time. Weather looks good for outdoor scenes.",
-      status: "sent",
-      createdBy: "Mary Brown",
-      createdAt: "2024-03-10",
-      lastModified: "2024-03-12",
-      recipients: ["cast@production.com", "crew@production.com"],
-    },
-    {
-      id: 2,
-      title: "Day 2 - Action Sequence",
-      date: "2024-03-16",
-      callTime: "7:00 AM",
-      wrapTime: "9:00 PM",
-      location: "Warehouse District",
-      address: "456 Industrial Blvd, Los Angeles, CA 90211",
-      weather: {
-        condition: "Partly Cloudy",
-        temperature: "68°F",
-        precipitation: "10%",
-      },
-      scenes: ["Scene 5A", "Scene 5B", "Scene 6A"],
-      cast: [
-        {
-          name: "John Doe",
-          character: "Hero",
-          callTime: "7:00 AM",
-          pickupTime: "6:30 AM",
-          notes: "Stunt rehearsal at 7:30 AM",
-        },
-        {
-          name: "Peter Wilson",
-          character: "Villain",
-          callTime: "9:00 AM",
-          pickupTime: "8:30 AM",
-        },
-      ],
-      crew: [
-        {
-          department: "Stunts",
-          members: ["Jack Thompson (Stunt Coordinator)", "Emma Davis (Stunt Double)"],
-          callTime: "6:30 AM",
-        },
-        {
-          department: "Special Effects",
-          members: ["David Lee (SFX Supervisor)", "Anna Garcia (Pyrotechnician)"],
-          callTime: "7:00 AM",
-        },
-      ],
-      equipment: [
-        {
-          category: "Safety",
-          items: ["Safety Harnesses", "Crash Mats", "Fire Extinguishers"],
-          responsible: "Jack Thompson",
-        },
-        {
-          category: "Special Effects",
-          items: ["Smoke Machines", "Pyrotechnic Charges", "Safety Barriers"],
-          responsible: "David Lee",
-        },
-      ],
-      catering: {
-        breakfast: "7:30 AM - Hot breakfast",
-        lunch: "1:30 PM - BBQ lunch",
-        dinner: "7:00 PM - Dinner boxes",
-        craftyLocation: "Catering truck on Industrial Blvd",
-      },
-      transportation: {
-        basecamp: "Warehouse parking lot",
-        parking: "Designated crew parking in lot",
-        shuttles: ["No shuttles needed - walking distance"],
-      },
-      contacts: [
-        {
-          name: "Stunt Coordinator - Jack Thompson",
-          role: "Stunt Coordinator",
-          phone: "(555) 456-7890",
-          email: "jack.thompson@stunts.com",
-        },
-        {
-          name: "Safety Officer - Lisa Park",
-          role: "Safety Officer",
-          phone: "(555) 321-0987",
-          email: "lisa.park@safety.com",
-        },
-      ],
-      notes: "Action-heavy day with stunts and pyrotechnics. Safety briefing at 7:15 AM mandatory for all crew.",
-      status: "confirmed",
-      createdBy: "Mary Brown",
-      createdAt: "2024-03-11",
-      lastModified: "2024-03-13",
-      recipients: ["cast@production.com", "crew@production.com", "stunts@production.com"],
-    },
-    {
-      id: 3,
-      title: "Day 3 - Interior Dialogue Scenes",
-      date: "2024-03-17",
-      callTime: "8:00 AM",
-      wrapTime: "6:00 PM",
-      location: "Studio Stage 5",
-      address: "789 Studio Way, Los Angeles, CA 90212",
-      weather: {
-        condition: "Indoor",
-        temperature: "72°F (Climate Controlled)",
-      },
-      scenes: ["Scene 8A", "Scene 8B", "Scene 9A", "Scene 10A"],
-      cast: [
-        {
-          name: "Jane Smith",
-          character: "Love Interest",
-          callTime: "8:00 AM",
-          notes: "Hair and makeup at 8:30 AM",
-        },
-        {
-          name: "Bob Williams",
-          character: "Mentor",
-          callTime: "10:00 AM",
-        },
-      ],
-      crew: [
-        {
-          department: "Camera",
-          members: ["Mike Johnson (DP)", "Sarah Wilson (1st AC)"],
-          callTime: "7:30 AM",
-        },
-        {
-          department: "Lighting",
-          members: ["Alex Chen (Gaffer)", "Chris Taylor (Best Boy)"],
-          callTime: "7:00 AM",
-        },
-      ],
-      equipment: [
-        {
-          category: "Camera",
-          items: ["ARRI Alexa Mini", "Master Prime Lenses", "Dolly Track"],
-          responsible: "Mike Johnson",
-        },
-      ],
-      catering: {
-        breakfast: "8:30 AM - Continental breakfast",
-        lunch: "1:00 PM - Catered lunch",
-        craftyLocation: "Stage 5 craft services area",
-      },
-      transportation: {
-        basecamp: "Studio parking structure",
-        parking: "Assigned parking spaces",
-        shuttles: ["Golf cart available for equipment transport"],
-      },
-      contacts: [
-        {
-          name: "Stage Manager - Tom Wilson",
-          role: "Stage Manager",
-          phone: "(555) 654-3210",
-          email: "tom.wilson@studio.com",
-        },
-      ],
-      notes: "Controlled studio environment. Multiple dialogue scenes scheduled.",
-      status: "draft",
-      createdBy: "Mary Brown",
-      createdAt: "2024-03-12",
-      lastModified: "2024-03-12",
-    },
-  ]
+    ]
+
+    if (projectId === "2") {
+      initialCallSheets.shift();
+      initialCallSheets[0].title = "Day 1 - NYC Shot";
+      initialCallSheets[0].location = "New York Street";
+    } else if (projectId === "3") {
+      initialCallSheets.pop();
+      initialCallSheets[0].title = "Day 1 - Beach Setup";
+    }
+
+    MOCK_CALL_STORE[projectId] = initialCallSheets;
+    setCallSheets(initialCallSheets);
+  }, [projectId])
+
+  useEffect(() => {
+    if (callSheets.length > 0 && projectId) {
+      MOCK_CALL_STORE[projectId] = callSheets
+    }
+  }, [callSheets, projectId])
 
   const filteredCallSheets = callSheets.filter((sheet) => {
     const matchesSearch =

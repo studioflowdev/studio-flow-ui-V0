@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   FileText,
   Upload,
@@ -19,7 +19,10 @@ import {
 
 interface ScriptModuleProps {
   searchQuery?: string
+  projectId?: string
 }
+
+const MOCK_SCENES_STORE: Record<string, Scene[]> = {}
 
 interface Scene {
   id: string
@@ -37,7 +40,7 @@ interface Scene {
   extractedFromAI?: boolean
 }
 
-export default function ScriptModule({ searchQuery = "" }: ScriptModuleProps) {
+export default function ScriptModule({ searchQuery = "", projectId = "1" }: ScriptModuleProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [selectedScene, setSelectedScene] = useState<Scene | null>(null)
   const [showAIExtraction, setShowAIExtraction] = useState(false)
@@ -46,53 +49,82 @@ export default function ScriptModule({ searchQuery = "" }: ScriptModuleProps) {
   const [showApprovalModal, setShowApprovalModal] = useState(false)
   const [pendingScenes, setPendingScenes] = useState<Scene[]>([])
 
-  const [scenes, setScenes] = useState<Scene[]>([
-    {
-      id: "1",
-      number: "1",
-      title: "Opening - City Dawn",
-      description:
-        "Establishing shot of the futuristic city at dawn. Camera slowly pans across the cityscape revealing flying cars and holographic advertisements.",
-      location: "EXT. NEO TOKYO - DAWN",
-      timeOfDay: "Dawn",
-      characters: ["Narrator (V.O.)"],
-      pageCount: 2,
-      status: "approved",
-      lastModified: "2 hours ago",
-      author: "Sarah Chen",
-      notes: ["VFX heavy scene", "Drone shots required"],
-    },
-    {
-      id: "2",
-      number: "2",
-      title: "Protagonist Introduction",
-      description:
-        "ALEX CHEN (28) wakes up in a cramped apartment. The room is filled with holographic displays showing news feeds and personal messages.",
-      location: "INT. ALEX'S APARTMENT - MORNING",
-      timeOfDay: "Morning",
-      characters: ["Alex Chen", "AI Assistant (V.O.)"],
-      pageCount: 3,
-      status: "revision",
-      lastModified: "1 day ago",
-      author: "Sarah Chen",
-      notes: ["Need to establish character motivation", "Add more world-building details"],
-    },
-    {
-      id: "3",
-      number: "3",
-      title: "The Discovery",
-      description:
-        "Alex discovers a mysterious data chip hidden in an old book. The chip contains encrypted information about a conspiracy.",
-      location: "INT. ALEX'S APARTMENT - MORNING",
-      timeOfDay: "Morning",
-      characters: ["Alex Chen"],
-      pageCount: 1,
-      status: "draft",
-      lastModified: "3 hours ago",
-      author: "Sarah Chen",
-      notes: ["Needs more tension", "Consider adding flashback"],
-    },
-  ])
+  const [scenes, setScenes] = useState<Scene[]>([])
+
+  useEffect(() => {
+    if (MOCK_SCENES_STORE[projectId]) {
+      setScenes(MOCK_SCENES_STORE[projectId])
+      return
+    }
+
+    const initialScenes: Scene[] = [
+      {
+        id: "1",
+        number: "1",
+        title: "Opening - City Dawn",
+        description:
+          "Establishing shot of the futuristic city at dawn. Camera slowly pans across the cityscape revealing flying cars and holographic advertisements.",
+        location: "EXT. NEO TOKYO - DAWN",
+        timeOfDay: "Dawn",
+        characters: ["Narrator (V.O.)"],
+        pageCount: 2,
+        status: "approved",
+        lastModified: "2 hours ago",
+        author: "Sarah Chen",
+        notes: ["VFX heavy scene", "Drone shots required"],
+      },
+      {
+        id: "2",
+        number: "2",
+        title: "Protagonist Introduction",
+        description:
+          "ALEX CHEN (28) wakes up in a cramped apartment. The room is filled with holographic displays showing news feeds and personal messages.",
+        location: "INT. ALEX'S APARTMENT - MORNING",
+        timeOfDay: "Morning",
+        characters: ["Alex Chen", "AI Assistant (V.O.)"],
+        pageCount: 3,
+        status: "revision",
+        lastModified: "1 day ago",
+        author: "Sarah Chen",
+        notes: ["Need to establish character motivation", "Add more world-building details"],
+      },
+      {
+        id: "3",
+        number: "3",
+        title: "The Discovery",
+        description:
+          "Alex discovers a mysterious data chip hidden in an old book. The chip contains encrypted information about a conspiracy.",
+        location: "INT. ALEX'S APARTMENT - MORNING",
+        timeOfDay: "Morning",
+        characters: ["Alex Chen"],
+        pageCount: 1,
+        status: "draft",
+        lastModified: "3 hours ago",
+        author: "Sarah Chen",
+        notes: ["Needs more tension", "Consider adding flashback"],
+      },
+    ]
+
+    // Customize
+    if (projectId === "2") {
+      initialScenes.forEach(s => s.location = s.location.replace("NEO TOKYO", "NEW YORK"));
+      initialScenes.push({
+        id: "4", number: "4", title: "Subway Chase", description: "Chase in the subway.", location: "INT. SUBWAY", timeOfDay: "Night", characters: ["Alex"], pageCount: 2, status: "draft", lastModified: "Now", author: "Mike", notes: []
+      });
+    } else if (projectId === "3") {
+      initialScenes.forEach(s => s.location = s.location.replace("NEO TOKYO", "LOS ANGELES"));
+      initialScenes.pop();
+    }
+
+    MOCK_SCENES_STORE[projectId] = initialScenes
+    setScenes(initialScenes)
+  }, [projectId])
+
+  useEffect(() => {
+    if (scenes.length > 0 && projectId) {
+      MOCK_SCENES_STORE[projectId] = scenes
+    }
+  }, [scenes, projectId])
 
   const handleAIExtraction = async () => {
     setShowAIExtraction(true)
@@ -365,17 +397,15 @@ export default function ScriptModule({ searchQuery = "" }: ScriptModuleProps) {
           <div className="flex items-center gap-2 bg-white/10 rounded-lg p-1">
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               Grid
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               List
             </button>

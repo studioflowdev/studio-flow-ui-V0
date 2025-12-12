@@ -106,127 +106,113 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
 
   const calendarRef = useRef<HTMLDivElement>(null)
 
-  // Project calendars
-  const [projectCalendars, setProjectCalendars] = useState<ProjectCalendar[]>([
-    { id: "main", name: "Main Calendar", color: "bg-blue-500", visible: true, editable: true },
-    { id: "work", name: "Work Schedule", color: "bg-green-500", visible: true, editable: true },
-    { id: "personal", name: "Personal", color: "bg-purple-500", visible: true, editable: true },
-    { id: "production", name: "Production", color: "bg-orange-500", visible: true, editable: true },
+  // Source calendars (representing Projects and Global contexts)
+  const [sourceCalendars, setSourceCalendars] = useState<ProjectCalendar[]>([
+    { id: "personal", name: "My Calendar", color: "bg-blue-500", visible: true, editable: true },
+    { id: "project-1", name: "Midnight Chronicles", color: "bg-purple-500", visible: true, editable: false },
+    { id: "project-2", name: "Urban Legends", color: "bg-orange-500", visible: true, editable: false },
+    { id: "project-3", name: "Summer Vibes", color: "bg-green-500", visible: true, editable: false },
   ])
 
-  // Sample calendar events
+  // Sample calendar events aggregating from multiple projects
   const [events, setEvents] = useState<CalendarEvent[]>([
     {
       id: 1,
-      title: "Team Meeting",
+      title: "Production Meeting",
       startTime: "09:00",
       endTime: "10:00",
-      color: "bg-blue-500",
+      color: "bg-purple-500",
       day: 1,
       date: "2025-03-03",
-      description: "Weekly team sync-up",
+      description: "Weekly sync for Midnight Chronicles",
       location: "Conference Room A",
-      attendees: ["John Doe", "Jane Smith", "Bob Johnson"],
-      organizer: "Alice Brown",
-      calendarId: "main",
+      attendees: ["Sarah Chen", "Alex Kim"],
+      organizer: "Sarah Chen",
+      calendarId: "project-1",
     },
     {
       id: 2,
-      title: "Lunch with Sarah",
-      startTime: "12:30",
-      endTime: "13:30",
-      color: "bg-green-500",
+      title: "Location Scout",
+      startTime: "10:00",
+      endTime: "14:00",
+      color: "bg-orange-500",
       day: 1,
       date: "2025-03-03",
-      description: "Discuss project timeline",
-      location: "Cafe Nero",
-      attendees: ["Sarah Lee"],
-      organizer: "You",
-      calendarId: "work",
+      description: "Scouting for Urban Legends",
+      location: "Downtown",
+      attendees: ["Location Manager"],
+      organizer: "Producer",
+      calendarId: "project-2",
     },
     {
       id: 3,
-      title: "Project Review",
-      startTime: "14:00",
-      endTime: "15:30",
-      color: "bg-purple-500",
-      day: 3,
-      date: "2025-03-05",
-      description: "Q2 project progress review",
-      location: "Meeting Room 3",
-      attendees: ["Team Alpha", "Stakeholders"],
-      organizer: "Project Manager",
-      calendarId: "work",
+      title: "Casting Call",
+      startTime: "13:00",
+      endTime: "17:00",
+      color: "bg-green-500",
+      day: 2,
+      date: "2025-03-04",
+      description: "Day 1 Casting for Summer Vibes",
+      location: "Studio B",
+      attendees: ["Casting Director"],
+      organizer: "Director",
+      calendarId: "project-3",
     },
     {
       id: 4,
-      title: "Client Call",
-      startTime: "10:00",
-      endTime: "11:00",
-      color: "bg-orange-500",
+      title: "Script Review",
+      startTime: "15:00",
+      endTime: "16:30",
+      color: "bg-purple-500",
       day: 2,
       date: "2025-03-04",
-      description: "Quarterly review with major client",
-      location: "Zoom Meeting",
-      attendees: ["Client Team", "Sales Team"],
-      organizer: "Account Manager",
-      calendarId: "production",
+      description: "Act 3 breakdown",
+      location: "Writers Room",
+      attendees: ["Writers"],
+      organizer: "Read",
+      calendarId: "project-1",
     },
     {
       id: 5,
-      title: "Team Brainstorm",
-      startTime: "13:00",
-      endTime: "14:30",
+      title: "Personal: Dentist",
+      startTime: "08:00",
+      endTime: "09:00",
       color: "bg-blue-500",
-      day: 4,
-      date: "2025-03-06",
-      description: "Ideation session for new product features",
-      location: "Creative Space",
-      attendees: ["Product Team", "Design Team"],
-      organizer: "Product Owner",
-      calendarId: "main",
-    },
-    {
-      id: 6,
-      title: "Product Demo",
-      startTime: "11:00",
-      endTime: "12:00",
-      color: "bg-purple-500",
-      day: 5,
-      date: "2025-03-07",
-      description: "Showcase new features to stakeholders",
-      location: "Demo Room",
-      attendees: ["Stakeholders", "Dev Team"],
-      organizer: "Tech Lead",
+      day: 3,
+      date: "2025-03-05",
+      description: "Routine checkup",
+      location: "Dental Clinic",
+      attendees: [],
+      organizer: "You",
       calendarId: "personal",
     },
     {
-      id: 7,
-      title: "Marketing Meeting",
-      startTime: "13:00",
-      endTime: "14:00",
-      color: "bg-green-500",
-      day: 6,
-      date: "2025-03-08",
-      description: "Discuss Q3 marketing strategy",
-      location: "Marketing Office",
-      attendees: ["Marketing Team"],
-      organizer: "Marketing Director",
-      calendarId: "work",
+      id: 6,
+      title: "VFX Review",
+      startTime: "11:00",
+      endTime: "12:00",
+      color: "bg-purple-500",
+      day: 4,
+      date: "2025-03-06",
+      description: "Review preliminary VFX shots",
+      location: "Edit Bay",
+      attendees: ["VFX Supervisor"],
+      organizer: "Post Super",
+      calendarId: "project-1",
     },
     {
-      id: 8,
-      title: "Code Review",
-      startTime: "15:00",
-      endTime: "16:00",
+      id: 7,
+      title: "Budget Approval",
+      startTime: "14:00",
+      endTime: "15:00",
       color: "bg-orange-500",
-      day: 7,
-      date: "2025-03-09",
-      description: "Review pull requests for new feature",
-      location: "Dev Area",
-      attendees: ["Dev Team"],
-      organizer: "Senior Developer",
-      calendarId: "production",
+      day: 5,
+      date: "2025-03-07",
+      description: "Finalize budget for Urban Legends",
+      location: "Office",
+      attendees: ["Exec Producer"],
+      organizer: "Line Producer",
+      calendarId: "project-2",
     },
   ])
 
@@ -268,16 +254,16 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
 
   // Calendar management functions
   const toggleCalendarVisibility = (calendarId: string) => {
-    setProjectCalendars((prev) => prev.map((cal) => (cal.id === calendarId ? { ...cal, visible: !cal.visible } : cal)))
+    setSourceCalendars((prev) => prev.map((cal) => (cal.id === calendarId ? { ...cal, visible: !cal.visible } : cal)))
   }
 
   const renameCalendar = (calendarId: string, newName: string) => {
-    setProjectCalendars((prev) => prev.map((cal) => (cal.id === calendarId ? { ...cal, name: newName } : cal)))
+    setSourceCalendars((prev) => prev.map((cal) => (cal.id === calendarId ? { ...cal, name: newName } : cal)))
     setEditingCalendar(null)
   }
 
   const changeCalendarColor = (calendarId: string, newColor: string) => {
-    setProjectCalendars((prev) => prev.map((cal) => (cal.id === calendarId ? { ...cal, color: newColor } : cal)))
+    setSourceCalendars((prev) => prev.map((cal) => (cal.id === calendarId ? { ...cal, color: newColor } : cal)))
     // Update all events with this calendar's color
     setEvents((prev) => prev.map((event) => (event.calendarId === calendarId ? { ...event, color: newColor } : event)))
     setShowColorPicker(null)
@@ -288,11 +274,11 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
     const newCalendar: ProjectCalendar = {
       id: newCalendarId,
       name: "New Calendar",
-      color: colorPalette[projectCalendars.length % colorPalette.length],
+      color: colorPalette[sourceCalendars.length % colorPalette.length],
       visible: true,
       editable: true,
     }
-    setProjectCalendars((prev) => [...prev, newCalendar])
+    setSourceCalendars((prev) => [...prev, newCalendar])
     setEditingCalendar(newCalendarId)
   }
 
@@ -311,7 +297,7 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
       location: "",
       attendees: [],
       organizer: "You",
-      calendarId: "main",
+      calendarId: "personal",
     }
     setEvents((prev) => [...prev, newEventData])
     setSelectedEvent(newEventData) // This opens edit mode immediately
@@ -506,7 +492,7 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
 
   // Get visible events based on calendar visibility
   const visibleEvents = events.filter((event) => {
-    const calendar = projectCalendars.find((cal) => cal.id === event.calendarId)
+    const calendar = sourceCalendars.find((cal) => cal.id === event.calendarId)
     return calendar?.visible
   })
 
@@ -663,11 +649,10 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
               <div key={i} className="p-2 text-center border-l border-white/20">
                 <div className="text-xs text-white/70 font-medium">{day}</div>
                 <div
-                  className={`text-lg font-medium mt-1 text-white ${
-                    weekDates[i].toDateString() === new Date().toDateString()
-                      ? "bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center mx-auto"
-                      : ""
-                  }`}
+                  className={`text-lg font-medium mt-1 text-white ${weekDates[i].toDateString() === new Date().toDateString()
+                    ? "bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center mx-auto"
+                    : ""
+                    }`}
                 >
                   {weekDates[i].getDate()}
                 </div>
@@ -769,17 +754,15 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
               return (
                 <div
                   key={i}
-                  className={`border-r border-b border-white/20 last:border-r-0 p-2 min-h-[120px] hover:bg-white/5 cursor-pointer ${
-                    !isCurrentMonth ? "opacity-50" : ""
-                  }`}
+                  className={`border-r border-b border-white/20 last:border-r-0 p-2 min-h-[120px] hover:bg-white/5 cursor-pointer ${!isCurrentMonth ? "opacity-50" : ""
+                    }`}
                   onClick={() => setCurrentDate(date)}
                 >
                   <div
-                    className={`text-sm font-medium mb-2 ${
-                      isToday
-                        ? "bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center"
-                        : "text-white"
-                    }`}
+                    className={`text-sm font-medium mb-2 ${isToday
+                      ? "bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center"
+                      : "text-white"
+                      }`}
                   >
                     {date.getDate()}
                   </div>
@@ -832,11 +815,12 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
   }, [contextMenu.visible, showColorPicker])
 
   // Project calendars - show project calendars first, then global ones
+  // Project calendars - show project calendars first, then global ones
   const getOrderedCalendars = () => {
-    if (!currentProject) return projectCalendars
+    if (!currentProject) return sourceCalendars
 
-    const projectSpecificCalendars = projectCalendars.filter((cal) => currentProject.calendars?.includes(cal.id))
-    const globalCalendars = projectCalendars.filter((cal) => !currentProject.calendars?.includes(cal.id))
+    const projectSpecificCalendars = sourceCalendars.filter((cal) => currentProject.calendars?.includes(cal.id))
+    const globalCalendars = sourceCalendars.filter((cal) => !currentProject.calendars?.includes(cal.id))
 
     return [...projectSpecificCalendars, ...globalCalendars]
   }
@@ -891,15 +875,14 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
                   <button
                     key={i}
                     onClick={() => setCurrentDate(date)}
-                    className={`text-xs rounded-full w-7 h-7 flex items-center justify-center transition-colors ${
-                      isSelected
-                        ? "bg-blue-500 text-white"
-                        : isToday
-                          ? "bg-blue-400/50 text-white"
-                          : isCurrentMonth
-                            ? "text-white hover:bg-white/20"
-                            : "text-white/30"
-                    }`}
+                    className={`text-xs rounded-full w-7 h-7 flex items-center justify-center transition-colors ${isSelected
+                      ? "bg-blue-500 text-white"
+                      : isToday
+                        ? "bg-blue-400/50 text-white"
+                        : isCurrentMonth
+                          ? "text-white hover:bg-white/20"
+                          : "text-white/30"
+                      }`}
                   >
                     {date.getDate()}
                   </button>
@@ -994,9 +977,8 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
                           {colorPalette.map((color) => (
                             <button
                               key={color}
-                              className={`w-6 h-6 rounded-sm ${color} hover:ring-2 hover:ring-white/50 transition-all ${
-                                cal.color === color ? "ring-2 ring-white" : ""
-                              }`}
+                              className={`w-6 h-6 rounded-sm ${color} hover:ring-2 hover:ring-white/50 transition-all ${cal.color === color ? "ring-2 ring-white" : ""
+                                }`}
                               onClick={() => changeCalendarColor(cal.id, color)}
                             />
                           ))}
@@ -1043,25 +1025,22 @@ export default function OriginalCalendar({ currentProject }: OriginalCalendarPro
             <div className="flex items-center gap-2 rounded-md p-1 bg-white/10">
               <button
                 onClick={() => setCurrentView("day")}
-                className={`px-3 py-1 rounded transition-colors ${
-                  currentView === "day" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-                }`}
+                className={`px-3 py-1 rounded transition-colors ${currentView === "day" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                  }`}
               >
                 Day
               </button>
               <button
                 onClick={() => setCurrentView("week")}
-                className={`px-3 py-1 rounded transition-colors ${
-                  currentView === "week" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-                }`}
+                className={`px-3 py-1 rounded transition-colors ${currentView === "week" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                  }`}
               >
                 Week
               </button>
               <button
                 onClick={() => setCurrentView("month")}
-                className={`px-3 py-1 rounded transition-colors ${
-                  currentView === "month" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-                }`}
+                className={`px-3 py-1 rounded transition-colors ${currentView === "month" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                  }`}
               >
                 Month
               </button>

@@ -42,55 +42,67 @@ import {
   ToggleLeft,
   ToggleRight,
   Sparkles,
+  Folder, // Added Folder icon
+  RefreshCw, // Added
 } from "lucide-react"
-import ScriptModule from "../components/script-module"
-import ScheduleModule from "../components/schedule-module"
-import CameraToCloudModule from "../components/camera-to-cloud-module"
-import OriginalCalendar from "../components/original-calendar"
-import ContactsManager from "../components/contacts-manager"
+import ScriptModule from "../components/projectmodules/Script/script-module"
+import ScheduleModule from "../components/projectmodules/Schedule/schedule-module"
+import CameraToCloudModule from "../components/projectmodules/Dailies/camera-to-cloud-module"
+import OriginalCalendar from "../components/globalmodules/original-calendar"
+import ContactsManager from "../components/globalmodules/contacts-manager"
 import SettingsPage from "../components/settings-page"
-import CastManagement from "../components/cast-management"
-import LocationScouting from "../components/location-scouting"
-import BudgetTracking from "../components/budget-tracking"
-import BudgetModule from "../components/budget-module"
-import VFXPipeline from "../components/vfx-pipeline"
-import TeamCollaborationHub from "../components/team-collaboration-hub"
-import GearManagement from "../components/gear-management"
-import StoryboardModule from "../components/storyboard-module"
-import AudioModule from "../components/audio-module"
-import MoodboardModule from "../components/moodboard-module"
-import LegalDocuments from "../components/legal-documents"
-import CallSheets from "../components/call-sheets"
-import AnalyticsDashboard from "../components/analytics-dashboard"
-import UserManagement from "../components/user-management"
-import DailiesReviewModule from "../components/dailies-review-module"
-import PostProductionTimeline from "../components/post-production-timeline"
+import CastManagement from "../components/projectmodules/Cast/cast-management"
+import LocationScouting from "../components/projectmodules/Locations/location-scouting"
+import BudgetTracking from "../components/projectmodules/Analytics/budget-tracking"
+import BudgetModule from "../components/projectmodules/Budget/budget-module"
+import VFXPipeline from "../components/projectmodules/VFX/vfx-pipeline"
+import TeamCollaborationHub from "../components/projectmodules/Team/team-collaboration-hub"
+import GearManagement from "../components/projectmodules/Gear/gear-management"
+import StoryboardModule from "../components/projectmodules/Storyboard/storyboard-module"
+import AudioModule from "../components/projectmodules/Audio/audio-module"
+import MoodboardModule from "../components/projectmodules/Moodboard/moodboard-module"
+import LegalDocuments from "../components/projectmodules/Legal/legal-documents"
+import CallSheets from "../components/projectmodules/CallSheets/call-sheets"
+import AnalyticsDashboard from "../components/projectmodules/Analytics/analytics-dashboard"
+import UserManagement from "../components/projectmodules/Users/user-management"
+import DailiesReviewModule from "../components/projectmodules/Dailies/dailies-review-module"
+import PostProductionTimeline from "../components/projectmodules/PostProduction/post-production-timeline"
 import AIGenerationSystem from "../components/ai-generation-system"
+import GlobalSettings from "../components/globalmodules/Settings/global-settings"
+import ProjectSettings from "../components/projectmodules/Settings/project-settings"
+import AssetManagement from "../components/projectmodules/Assets/asset-management"
+import { useProjectActions } from "../components/hooks/useProjectActions"
 
 // Types for production data
 interface Project {
   id: string
   title: string
-  status: "development" | "pre-production" | "production" | "post-production" | "completed"
-  progress: number
-  budget: number
-  budgetUsed: number
-  daysRemaining: number
-  totalDays: number
-  director: string
-  producer: string
-  genre: string
-  format: string
-  lastActivity: string
-  thumbnail: string
-  priority: "high" | "medium" | "low"
-  aiInsights: string[]
-  team: { name: string; role: string; avatar: string }[]
-  calendars: string[]
-  contacts: string[]
+  type?: string
+  status: "development" | "pre-production" | "production" | "post-production" | "completed" | "archived"
+  progress?: number
+  budget?: number
+  budgetUsed?: number
+  daysRemaining?: number
+  totalDays?: number
+  director?: string
+  producer?: string
+  genre?: string
+  format?: string
+  lastActivity?: string
+  thumbnail?: string
+  priority?: "high" | "medium" | "low"
+  aiInsights?: string[]
+  team?: { id?: string; name: string; role: string; avatar: string }[]
+  calendars?: string[]
+  contacts?: string[]
   backgroundImage?: string
   backgroundType?: "image" | "gradient" | "color"
   backgroundColor?: string
+  startDate?: string
+  endDate?: string
+  tasks?: { total: number; completed: number; pending: number; blocked: number }
+  nextMilestone?: string
+  description?: string
 }
 
 interface ProductionModule {
@@ -138,6 +150,9 @@ export default function StudioFlowDashboard() {
 
   // Enhanced search state
   const [searchQuery, setSearchQuery] = useState("")
+
+  const { isExporting, exportProject } = useProjectActions()
+
   const [searchMode, setSearchMode] = useState<SearchMode>({
     global: true,
     moduleSpecific: false,
@@ -396,8 +411,7 @@ export default function StudioFlowDashboard() {
   useEffect(() => {
     setIsLoaded(true)
     setCurrentProject(projects[0])
-
-    return () => {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -624,95 +638,97 @@ export default function StudioFlowDashboard() {
     }
   }
 
+  // Project management handlers
+  const handleAddProject = (newProject: Project) => {
+    setProjects((prev) => [...prev, newProject])
+    setCurrentProject(newProject)
+  }
+
+  const handleUpdateProject = (updatedProject: Project) => {
+    setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)))
+    if (currentProject?.id === updatedProject.id) {
+      setCurrentProject(updatedProject)
+    }
+  }
+
+  const handleDeleteProject = (projectId: string) => {
+    const updatedProjects = projects.filter((p) => p.id !== projectId)
+    setProjects(updatedProjects)
+    if (currentProject?.id === projectId) {
+      setCurrentProject(updatedProjects[0] || null)
+    }
+  }
+
   // Sample project data
-  const projects: Project[] = [
+  const [projects, setProjects] = useState<Project[]>([
     {
       id: "1",
       title: "Midnight Chronicles",
       status: "production",
-      progress: 65,
-      budget: 2500000,
-      budgetUsed: 1625000,
-      daysRemaining: 18,
-      totalDays: 45,
-      director: "Sarah Chen",
-      producer: "Michael Torres",
-      genre: "Sci-Fi Thriller",
-      format: "Feature Film",
-      lastActivity: "2 hours ago",
-      thumbnail: "/placeholder.svg?height=200&width=300",
       priority: "high",
-      aiInsights: [
-        "15% over budget - optimize schedule",
-        "Weather delays predicted for next week",
-        "VFX shots ready for review",
-      ],
+      progress: 65,
+      startDate: "2024-03-01",
+      endDate: "2024-08-15",
+      budget: 15000000,
+      budgetUsed: 8400000,
       team: [
-        { name: "Sarah Chen", role: "Director", avatar: "SC" },
-        { name: "Michael Torres", role: "Producer", avatar: "MT" },
-        { name: "Alex Kim", role: "DP", avatar: "AK" },
-        { name: "Emma Davis", role: "Editor", avatar: "ED" },
+        { id: "1", name: "Sarah J.", role: "Director", avatar: "SJ" },
+        { id: "2", name: "Mike R.", role: "Producer", avatar: "MR" },
+        { id: "3", name: "Elena K.", role: "DoP", avatar: "EK" },
+        { id: "4", name: "David L.", role: "Editor", avatar: "DL" },
       ],
-      calendars: ["midnight-main", "midnight-production"],
-      contacts: ["sarah-chen", "michael-torres", "alex-kim", "emma-davis"],
-      backgroundImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop",
-      backgroundType: "image",
+      tasks: { total: 145, completed: 82, pending: 63, blocked: 4 },
+      nextMilestone: "Principal Photography Wrap",
+      daysRemaining: 42,
+      totalDays: 120,
+      lastActivity: "2 hours ago",
+      thumbnail: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop",
+      description: "A cyberpunk noir thriller set in 2089 Tokyo.",
+      backgroundType: "image", // "image" | "gradient" | "color"
+      backgroundImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+      backgroundColor: "",
+      calendars: ["cal_1", "cal_2"], // IDs of calendars associated with this project
     },
     {
       id: "2",
       title: "Urban Legends",
-      status: "pre-production",
-      progress: 85,
-      budget: 850000,
-      budgetUsed: 127500,
-      daysRemaining: 12,
-      totalDays: 30,
-      director: "Jordan Blake",
-      producer: "Lisa Park",
-      genre: "Horror",
-      format: "Feature Film",
-      lastActivity: "45 minutes ago",
-      thumbnail: "/placeholder.svg?height=200&width=300",
+      type: "Series",
+      genre: "Horror Anthology",
+      format: "Limited Series",
+      status: "development",
       priority: "medium",
-      aiInsights: ["Cast locked - ready to start", "Location permits approved", "Equipment package optimized"],
+      progress: 25,
+      startDate: "2024-06-01",
+      endDate: "2024-12-20",
+      budget: 8000000,
+      budgetUsed: 450000,
       team: [
-        { name: "Jordan Blake", role: "Director", avatar: "JB" },
-        { name: "Lisa Park", role: "Producer", avatar: "LP" },
-        { name: "Tom Wilson", role: "AD", avatar: "TW" },
+        { id: "5", name: "Chris P.", role: "Showrunner", avatar: "CP" },
+        { id: "6", name: "Anna M.", role: "Writer", avatar: "AM" },
       ],
-      calendars: ["urban-main", "urban-prep"],
-      contacts: ["jordan-blake", "lisa-park", "tom-wilson"],
+      tasks: { total: 85, completed: 20, pending: 60, blocked: 5 },
+      nextMilestone: "Script Lockdown",
+      daysRemaining: 180,
+      totalDays: 200,
+      lastActivity: "1 day ago",
+      thumbnail: "https://images.unsplash.com/photo-1509347528160-9a9e33742cd4?q=80&w=800&auto=format&fit=crop",
+      description: "An anthology series exploring modern urban myths.",
       backgroundType: "gradient",
-      backgroundColor: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      backgroundImage: "",
+      backgroundColor: "linear-gradient(to right, #243B55, #141E30)",
+      calendars: [],
     },
     {
       id: "3",
-      title: "Summer Vibes",
+      title: "Neon Nights",
+      type: "Commercial",
+      genre: "Tech Commercial",
+      format: "30s Spot",
       status: "post-production",
-      progress: 40,
-      budget: 450000,
-      budgetUsed: 425000,
-      daysRemaining: 25,
-      totalDays: 60,
-      director: "Maya Rodriguez",
-      producer: "Chris Johnson",
-      genre: "Comedy",
-      format: "Series",
-      lastActivity: "1 day ago",
-      thumbnail: "/placeholder.svg?height=200&width=300",
-      priority: "low",
-      aiInsights: ["Color grading 60% complete", "Music licensing in progress", "Delivery on schedule"],
-      team: [
-        { name: "Maya Rodriguez", role: "Director", avatar: "MR" },
-        { name: "Chris Johnson", role: "Producer", avatar: "CJ" },
-        { name: "Sam Lee", role: "Editor", avatar: "SL" },
-      ],
-      calendars: ["summer-main", "summer-post"],
-      contacts: ["maya-rodriguez", "chris-johnson", "sam-lee"],
       backgroundType: "color",
       backgroundColor: "#f59e0b",
     },
-  ]
+  ])
 
   // Production modules for sidebar - Updated to include budget module
   const productionModules: ProductionModule[] = [
@@ -1079,7 +1095,15 @@ export default function StudioFlowDashboard() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-white">Active Projects</h2>
-          <button className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+          <button
+            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors shadow-lg hover:shadow-blue-500/25"
+            onClick={() => {
+              // In a real app, this would open a modal or navigate to a creation flow
+              setCurrentView("settings");
+              // logic to set active tab to projects would go here if state was lifted
+              alert("New Project Wizard starting...");
+            }}
+          >
             <Plus className="h-4 w-4" />
             New Project
           </button>
@@ -1089,7 +1113,7 @@ export default function StudioFlowDashboard() {
           {projects.map((project) => (
             <div
               key={project.id}
-              className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 cursor-pointer"
+              className="group bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 cursor-pointer"
               onClick={() => setSelectedProject(project)}
             >
               <div className="relative h-48">
@@ -1097,26 +1121,64 @@ export default function StudioFlowDashboard() {
                   src={project.thumbnail || "/placeholder.svg"}
                   alt={project.title}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="absolute top-3 right-3">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+
+                {/* Status Badge */}
+                <div className="absolute top-3 right-3 flex items-center gap-2">
+                  <div className="bg-black/40 backdrop-blur-md rounded-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity border border-white/10" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className="p-1.5 hover:bg-white/10 rounded-md text-white/70 hover:text-white transition-colors"
+                      title="Project Settings"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProject(project);
+                        handleSidebarNavigation("project-settings");
+                      }}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                    <button
+                      className="p-1.5 hover:bg-white/10 rounded-md text-white/70 hover:text-white transition-colors"
+                      title="Export Project"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        exportProject(project);
+                      }}
+                    >
+                      {isExporting === project.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    </button>
+                    <button
+                      className="p-1.5 hover:bg-white/10 rounded-md text-white/70 hover:text-red-400 transition-colors"
+                      title="Archive Project"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // In a real app we'd trigger a state update here
+                        alert("Project archived (mock)");
+                      }}
+                    >
+                      <Archive className="h-4 w-4" />
+                    </button>
+                  </div>
+
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(project.status)}`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium text-white backdrop-blur-md shadow-lg ${getStatusColor(project.status)}`}
                   >
                     {project.status.replace("-", " ").toUpperCase()}
                   </span>
                 </div>
+
                 <div className="absolute top-3 left-3">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      project.priority === "high"
-                        ? "bg-red-500"
-                        : project.priority === "medium"
-                          ? "bg-yellow-500"
-                          : "bg-green-500"
-                    } text-white`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium backdrop-blur-md shadow-lg ${project.priority === "high"
+                      ? "bg-red-500/80 border border-red-400/30"
+                      : project.priority === "medium"
+                        ? "bg-yellow-500/80 border border-yellow-400/30"
+                        : "bg-green-500/80 border border-green-400/30"
+                      } text-white`}
                   >
-                    {project.priority.toUpperCase()}
+                    {(project.priority || "medium").toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -1124,37 +1186,37 @@ export default function StudioFlowDashboard() {
               <div className="p-4">
                 <h3 className="text-lg font-semibold text-white mb-2">{project.title}</h3>
                 <p className="text-white/70 text-sm mb-3">
-                  {project.genre} • {project.format}
+                  {project.genre || "General"} • {project.format || "Standard"}
                 </p>
 
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between text-sm text-white/70 mb-1">
                       <span>Progress</span>
-                      <span>{project.progress}%</span>
+                      <span>{project.progress || 0}%</span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-2">
-                      <div className="progress-bar h-2 rounded-full" style={{ width: `${project.progress}%` }}></div>
+                      <div className="progress-bar h-2 rounded-full" style={{ width: `${project.progress || 0}%` }}></div>
                     </div>
                   </div>
 
                   <div className="flex justify-between text-sm">
                     <span className="text-white/70">Budget</span>
                     <span className="text-white">
-                      ${(project.budgetUsed / 1000000).toFixed(1)}M / ${(project.budget / 1000000).toFixed(1)}M
+                      ${((project.budgetUsed || 0) / 1000000).toFixed(1)}M / ${((project.budget || 0) / 1000000).toFixed(1)}M
                     </span>
                   </div>
 
                   <div className="flex justify-between text-sm">
                     <span className="text-white/70">Days Remaining</span>
                     <span className="text-white">
-                      {project.daysRemaining} of {project.totalDays}
+                      {project.daysRemaining || 0} of {project.totalDays || 0}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2 pt-2">
                     <div className="flex -space-x-2">
-                      {project.team.slice(0, 3).map((member, i) => (
+                      {(project.team || []).slice(0, 3).map((member, i) => (
                         <div
                           key={i}
                           className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium border-2 border-white/20"
@@ -1162,9 +1224,9 @@ export default function StudioFlowDashboard() {
                           {member.avatar}
                         </div>
                       ))}
-                      {project.team.length > 3 && (
+                      {(project.team || []).length > 3 && (
                         <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-medium border-2 border-white/20">
-                          +{project.team.length - 3}
+                          +{(project.team || []).length - 3}
                         </div>
                       )}
                     </div>
@@ -1207,9 +1269,8 @@ export default function StudioFlowDashboard() {
         {modules.map((module) => (
           <button
             key={module.id}
-            className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${
-              currentView === module.id && headerView === "dashboard" ? "bg-white/20" : ""
-            }`}
+            className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${currentView === module.id && headerView === "dashboard" ? "bg-white/20" : ""
+              }`}
             onClick={() => handleSidebarNavigation(module.id)}
           >
             <div className={`status-indicator ${getModuleStatusColor(module.status)}`}>
@@ -1276,7 +1337,7 @@ export default function StudioFlowDashboard() {
           </button>
           <div className="flex items-center gap-3">
             <Film className="h-8 w-8 text-blue-400" />
-            <span className="text-2xl font-bold text-white drop-shadow-lg">StudioFlow</span>
+            <span className="text-2xl font-bold text-white drop-shadow-lg">StudioFlow v2</span>
           </div>
         </div>
 
@@ -1392,31 +1453,28 @@ export default function StudioFlowDashboard() {
           <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-lg p-1 border border-white/20">
             <button
               onClick={() => setHeaderView("dashboard")}
-              className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                headerView === "dashboard"
-                  ? "bg-white/20 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/10"
-              }`}
+              className={`px-4 py-2 rounded-md transition-all duration-200 ${headerView === "dashboard"
+                ? "bg-white/20 text-white"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
             >
               Dashboard
             </button>
             <button
               onClick={() => setHeaderView("calendar")}
-              className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                headerView === "calendar"
-                  ? "bg-white/20 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/10"
-              }`}
+              className={`px-4 py-2 rounded-md transition-all duration-200 ${headerView === "calendar"
+                ? "bg-white/20 text-white"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
             >
               Calendar
             </button>
             <button
               onClick={() => setHeaderView("contacts")}
-              className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                headerView === "contacts"
-                  ? "bg-white/20 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/10"
-              }`}
+              className={`px-4 py-2 rounded-md transition-all duration-200 ${headerView === "contacts"
+                ? "bg-white/20 text-white"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
             >
               Contacts
             </button>
@@ -1686,9 +1744,8 @@ export default function StudioFlowDashboard() {
                   <BarChart3 className="h-6 w-6 mx-auto" />
                 </button>
                 <button
-                  className={`w-full p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${
-                    currentView === "budget-module" && headerView === "dashboard" ? "bg-white/20" : ""
-                  } status-indicator ${getModuleStatusColor(productionModules.find((m) => m.id === "budget-module")?.status || "active")}`}
+                  className={`w-full p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${currentView === "budget-module" && headerView === "dashboard" ? "bg-white/20" : ""
+                    } status-indicator ${getModuleStatusColor(productionModules.find((m) => m.id === "budget-module")?.status || "active")}`}
                   onClick={() => handleSidebarNavigation("budget-module")}
                 >
                   <DollarSign className="h-6 w-6 text-white mx-auto" />
@@ -1700,32 +1757,43 @@ export default function StudioFlowDashboard() {
                 ].map((module) => (
                   <button
                     key={module.id}
-                    className={`w-full p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${
-                      currentView === module.id && headerView === "dashboard" ? "bg-white/20" : ""
-                    } status-indicator ${getModuleStatusColor(module.status)}`}
+                    className={`w-full p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${currentView === module.id && headerView === "dashboard" ? "bg-white/20" : ""
+                      } status-indicator ${getModuleStatusColor(module.status)}`}
                     onClick={() => handleSidebarNavigation(module.id)}
                   >
                     <module.icon className="h-6 w-6 text-white mx-auto" />
                   </button>
                 ))}
                 <button
-                  className={`w-full p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${
-                    currentView === "settings" ? "bg-white/20" : ""
-                  }`}
-                  onClick={() => handleSidebarNavigation("settings")}
+                  className={`w-full p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${currentView === "project-settings" ? "bg-white/20" : ""
+                    }`}
+                  onClick={() => handleSidebarNavigation("project-settings")}
                 >
                   <Settings className="h-6 w-6 text-white mx-auto" />
                 </button>
               </div>
             ) : (
               <>
+                {/* Project Settings - Above Budget */}
+                <div className="mb-6">
+                  <div className="space-y-1">
+                    <button
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${currentView === "project-settings" ? "bg-white/20" : ""
+                        }`}
+                      onClick={() => handleSidebarNavigation("project-settings")}
+                    >
+                      <Settings className="h-5 w-5 text-white" />
+                      <span className="text-white font-medium">Project Settings</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Budget Module - Above Pre-Production */}
                 <div className="mb-6">
                   <div className="space-y-1">
                     <button
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${
-                        currentView === "budget-module" && headerView === "dashboard" ? "bg-white/20" : ""
-                      }`}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${currentView === "budget-module" && headerView === "dashboard" ? "bg-white/20" : ""
+                        }`}
                       onClick={() => handleSidebarNavigation("budget-module")}
                     >
                       <div
@@ -1756,20 +1824,18 @@ export default function StudioFlowDashboard() {
                   productionModules.filter((m) => m.id !== "budget-module"),
                   "Pre-Production",
                 )}
-                {renderModuleList(workflowModules, "Production Workflows")}
                 {renderModuleList(creativeModules, "Creative Assets")}
 
-                {/* Settings */}
+                {/* Asset Management */}
                 <div className="mb-6">
-                  <h3 className="text-white/70 text-sm font-medium mb-3 uppercase tracking-wider">System</h3>
+                  <h3 className="text-white/70 text-sm font-medium mb-3 uppercase tracking-wider">Assets</h3>
                   <button
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${
-                      currentView === "settings" ? "bg-white/20" : ""
-                    }`}
-                    onClick={() => handleSidebarNavigation("settings")}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${currentView === "assets" ? "bg-white/20" : ""
+                      }`}
+                    onClick={() => handleSidebarNavigation("assets")}
                   >
-                    <Settings className="h-5 w-5 text-white" />
-                    <span className="text-white font-medium">Settings</span>
+                    <Folder className="h-5 w-5 text-white" />
+                    <span className="text-white font-medium">Asset Manager</span>
                   </button>
                 </div>
               </>
@@ -1792,18 +1858,22 @@ export default function StudioFlowDashboard() {
                 renderDashboard()
               ) : currentView === "budget-module" ? (
                 <BudgetModule
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "budget-module" ? searchQuery : ""}
                 />
               ) : currentView === "script" ? (
                 <ScriptModule
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "script" ? searchQuery : ""}
                 />
               ) : currentView === "schedule" ? (
                 <ScheduleModule
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "schedule" ? searchQuery : ""}
                 />
               ) : currentView === "cast" ? (
                 <CastManagement
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "cast" ? searchQuery : ""}
                   filters={{
                     role: getFilterValue("role"),
@@ -1813,6 +1883,7 @@ export default function StudioFlowDashboard() {
                 />
               ) : currentView === "locations" ? (
                 <LocationScouting
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "locations" ? searchQuery : ""}
                   filters={{
                     type: getFilterValue("type"),
@@ -1823,6 +1894,7 @@ export default function StudioFlowDashboard() {
                 <CameraToCloudModule />
               ) : currentView === "vfx" ? (
                 <VFXPipeline
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "vfx" ? searchQuery : ""}
                   filters={{
                     status: getFilterValue("status"),
@@ -1830,21 +1902,25 @@ export default function StudioFlowDashboard() {
                   }}
                 />
               ) : currentView === "crew" ? (
-                <TeamCollaborationHub />
+                <TeamCollaborationHub projectId={currentProject?.id} />
               ) : currentView === "gear" ? (
                 <GearManagement
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "gear" ? searchQuery : ""}
                   filters={{
                     category: getFilterValue("category"),
                     status: getFilterValue("status"),
+                    department: getFilterValue("department"),
                   }}
                 />
               ) : currentView === "storyboard" ? (
                 <StoryboardModule
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "storyboard" ? searchQuery : ""}
                 />
               ) : currentView === "audio" ? (
                 <AudioModule
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "audio" ? searchQuery : ""}
                   filters={{
                     type: getFilterValue("type"),
@@ -1853,6 +1929,7 @@ export default function StudioFlowDashboard() {
                 />
               ) : currentView === "moodboard" ? (
                 <MoodboardModule
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "moodboard" ? searchQuery : ""}
                   filters={{
                     category: getFilterValue("category"),
@@ -1862,18 +1939,20 @@ export default function StudioFlowDashboard() {
               ) : currentView === "budget" ? (
                 <BudgetTracking />
               ) : currentView === "legal" ? (
-                <LegalDocuments />
+                <LegalDocuments projectId={currentProject?.id} />
               ) : currentView === "call-sheets" ? (
                 <CallSheets
+                  projectId={currentProject?.id}
                   searchQuery={searchMode.moduleSpecific && selectedSearchModule === "call-sheets" ? searchQuery : ""}
                   filters={{
                     status: getFilterValue("status"),
                   }}
                 />
               ) : currentView === "analytics" ? (
-                <AnalyticsDashboard />
+                <AnalyticsDashboard projectId={currentProject?.id} />
               ) : currentView === "user-management" ? (
                 <UserManagement
+                  projectId={currentProject?.id}
                   searchQuery={
                     searchMode.moduleSpecific && selectedSearchModule === "user-management" ? searchQuery : ""
                   }
@@ -1883,15 +1962,30 @@ export default function StudioFlowDashboard() {
                   }}
                 />
               ) : currentView === "dailies-review" ? (
-                <DailiesReviewModule />
+                <DailiesReviewModule projectId={currentProject?.id} />
               ) : currentView === "post-timeline" ? (
-                <PostProductionTimeline />
+                <PostProductionTimeline projectId={currentProject?.id} />
               ) : currentView === "settings" ? (
-                <SettingsPage
-                  globalSettings={globalSettings}
-                  setGlobalSettings={setGlobalSettings}
+                <GlobalSettings
+                  onNavigateToProject={(projectId) => {
+                    const project = projects.find(p => p.id === projectId)
+                    if (project) {
+                      setSelectedProject(project)
+                      setCurrentProject(project)
+                      setCurrentView("project-settings")
+                      setSidebarCollapsed(false)
+                    }
+                  }}
+                />
+              ) : currentView === "assets" ? (
+                <AssetManagement projectId={currentProject?.id} />
+              ) : currentView === "project-settings" ? (
+                <ProjectSettings
                   currentProject={currentProject}
-                  setCurrentProject={setCurrentProject}
+                  onUpdateProject={(project, updates) => {
+                    const updated = { ...project, ...updates }
+                    setCurrentProject(updated)
+                  }}
                 />
               ) : (
                 renderDashboard()
@@ -1901,38 +1995,40 @@ export default function StudioFlowDashboard() {
         </div>
 
         {/* AI Generation Panel */}
-        {showAIGenerationPanel && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <Sparkles className="h-6 w-6 text-purple-400" />
-                    <h2 className="text-xl font-semibold text-white">AI Generation Studio</h2>
-                    <span className="text-sm text-white/60">Context: {getCurrentModuleName()}</span>
+        {
+          showAIGenerationPanel && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="h-6 w-6 text-purple-400" />
+                      <h2 className="text-xl font-semibold text-white">AI Generation Studio</h2>
+                      <span className="text-sm text-white/60">Context: {getCurrentModuleName()}</span>
+                    </div>
+                    <button
+                      onClick={() => setShowAIGenerationPanel(false)}
+                      className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <X className="h-5 w-5 text-white" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setShowAIGenerationPanel(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <X className="h-5 w-5 text-white" />
-                  </button>
-                </div>
 
-                <AIGenerationSystem
-                  context={getAIGenerationContext()}
-                  onGenerated={(result) => {
-                    console.log("AI Generation completed:", result)
-                    // Handle the generated result
-                  }}
-                  variant="panel"
-                  availableTypes={getAvailableGenerationTypes()}
-                />
+                  <AIGenerationSystem
+                    context={getAIGenerationContext()}
+                    onGenerated={(result) => {
+                      console.log("AI Generation completed:", result)
+                      // Handle the generated result
+                    }}
+                    variant="panel"
+                    availableTypes={getAvailableGenerationTypes()}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
-    </div>
+          )
+        }
+      </main >
+    </div >
   )
 }

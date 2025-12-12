@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ImageIcon,
   Plus,
@@ -43,121 +43,151 @@ interface MoodboardModuleProps {
     type: string
     color?: string
   }
+  projectId?: string
 }
+
+const MOCK_MOODBOARD_STORE: Record<string, MoodboardItem[]> = {}
 
 export default function MoodboardModule({
   searchQuery = "",
   filters = { category: "all", type: "all", color: "all" },
+  projectId = "1",
 }: MoodboardModuleProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [selectedItem, setSelectedItem] = useState<MoodboardItem | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [gridSize, setGridSize] = useState(3)
+  const [moodboardItems, setMoodboardItems] = useState<MoodboardItem[]>([])
 
-  const moodboardItems: MoodboardItem[] = [
-    {
-      id: 1,
-      title: "Cozy Living Room",
-      category: "Living Room",
-      type: "Interior",
-      imageUrl: "/placeholder.svg?height=400&width=300&text=Cozy+Living+Room",
-      description: "A warm and inviting living space with natural lighting.",
-      tags: ["cozy", "living room", "interior", "warm", "natural light"],
-      color: "warm",
-      createdBy: "Sarah Johnson",
-      createdAt: "2024-01-15",
-      likes: 24,
-      isLiked: true,
-      isBookmarked: false,
-      source: "Pinterest",
-      notes: "Perfect for intimate dialogue scenes",
-    },
-    {
-      id: 2,
-      title: "Modern Kitchen Design",
-      category: "Kitchen",
-      type: "Interior",
-      imageUrl: "/placeholder.svg?height=400&width=300&text=Modern+Kitchen",
-      description: "Sleek and functional kitchen design with clean lines.",
-      tags: ["modern", "kitchen", "interior", "clean", "minimalist"],
-      color: "cool",
-      createdBy: "Mike Chen",
-      createdAt: "2024-01-14",
-      likes: 18,
-      isLiked: false,
-      isBookmarked: true,
-      source: "Architectural Digest",
-      notes: "Great for cooking scenes and family interactions",
-    },
-    {
-      id: 3,
-      title: "Minimalist Bedroom",
-      category: "Bedroom",
-      type: "Interior",
-      imageUrl: "/placeholder.svg?height=400&width=300&text=Minimalist+Bedroom",
-      description: "Clean and simple bedroom decor with neutral tones.",
-      tags: ["minimalist", "bedroom", "interior", "neutral", "simple"],
-      color: "neutral",
-      createdBy: "Emma Davis",
-      createdAt: "2024-01-13",
-      likes: 31,
-      isLiked: true,
-      isBookmarked: true,
-      source: "Design Milk",
-      notes: "Ideal for peaceful morning scenes",
-    },
-    {
-      id: 4,
-      title: "Rustic Bathroom",
-      category: "Bathroom",
-      type: "Interior",
-      imageUrl: "/placeholder.svg?height=400&width=300&text=Rustic+Bathroom",
-      description: "A bathroom with rustic charm and vintage fixtures.",
-      tags: ["rustic", "bathroom", "interior", "vintage", "wood"],
-      color: "warm",
-      createdBy: "Tom Wilson",
-      createdAt: "2024-01-12",
-      likes: 15,
-      isLiked: false,
-      isBookmarked: false,
-      source: "Country Living",
-      notes: "Character-building space with texture",
-    },
-    {
-      id: 5,
-      title: "Outdoor Patio",
-      category: "Outdoor",
-      type: "Exterior",
-      imageUrl: "/placeholder.svg?height=400&width=300&text=Outdoor+Patio",
-      description: "Relaxing outdoor patio space with garden views.",
-      tags: ["outdoor", "patio", "exterior", "garden", "relaxing"],
-      color: "natural",
-      createdBy: "Lisa Park",
-      createdAt: "2024-01-11",
-      likes: 42,
-      isLiked: true,
-      isBookmarked: false,
-      source: "Better Homes & Gardens",
-      notes: "Perfect for outdoor dining and conversation scenes",
-    },
-    {
-      id: 6,
-      title: "Contemporary Office",
-      category: "Office",
-      type: "Interior",
-      imageUrl: "/placeholder.svg?height=400&width=300&text=Contemporary+Office",
-      description: "A modern and productive office environment.",
-      tags: ["contemporary", "office", "interior", "professional", "modern"],
-      color: "cool",
-      createdBy: "Alex Kim",
-      createdAt: "2024-01-10",
-      likes: 27,
-      isLiked: false,
-      isBookmarked: true,
-      source: "Office Design Magazine",
-      notes: "Corporate scenes and business meetings",
-    },
-  ]
+  useEffect(() => {
+    if (MOCK_MOODBOARD_STORE[projectId]) {
+      setMoodboardItems(MOCK_MOODBOARD_STORE[projectId])
+      return
+    }
+
+    const initialItems: MoodboardItem[] = [
+      {
+        id: 1,
+        title: "Cozy Living Room",
+        category: "Living Room",
+        type: "Interior",
+        imageUrl: "/placeholder.svg?height=400&width=300&text=Cozy+Living+Room",
+        description: "A warm and inviting living space with natural lighting.",
+        tags: ["cozy", "living room", "interior", "warm", "natural light"],
+        color: "warm",
+        createdBy: "Sarah Johnson",
+        createdAt: "2024-01-15",
+        likes: 24,
+        isLiked: true,
+        isBookmarked: false,
+        source: "Pinterest",
+        notes: "Perfect for intimate dialogue scenes",
+      },
+      {
+        id: 2,
+        title: "Modern Kitchen Design",
+        category: "Kitchen",
+        type: "Interior",
+        imageUrl: "/placeholder.svg?height=400&width=300&text=Modern+Kitchen",
+        description: "Sleek and functional kitchen design with clean lines.",
+        tags: ["modern", "kitchen", "interior", "clean", "minimalist"],
+        color: "cool",
+        createdBy: "Mike Chen",
+        createdAt: "2024-01-14",
+        likes: 18,
+        isLiked: false,
+        isBookmarked: true,
+        source: "Architectural Digest",
+        notes: "Great for cooking scenes and family interactions",
+      },
+      {
+        id: 3,
+        title: "Minimalist Bedroom",
+        category: "Bedroom",
+        type: "Interior",
+        imageUrl: "/placeholder.svg?height=400&width=300&text=Minimalist+Bedroom",
+        description: "Clean and simple bedroom decor with neutral tones.",
+        tags: ["minimalist", "bedroom", "interior", "neutral", "simple"],
+        color: "neutral",
+        createdBy: "Emma Davis",
+        createdAt: "2024-01-13",
+        likes: 31,
+        isLiked: true,
+        isBookmarked: true,
+        source: "Design Milk",
+        notes: "Ideal for peaceful morning scenes",
+      },
+      {
+        id: 4,
+        title: "Rustic Bathroom",
+        category: "Bathroom",
+        type: "Interior",
+        imageUrl: "/placeholder.svg?height=400&width=300&text=Rustic+Bathroom",
+        description: "A bathroom with rustic charm and vintage fixtures.",
+        tags: ["rustic", "bathroom", "interior", "vintage", "wood"],
+        color: "warm",
+        createdBy: "Tom Wilson",
+        createdAt: "2024-01-12",
+        likes: 15,
+        isLiked: false,
+        isBookmarked: false,
+        source: "Country Living",
+        notes: "Character-building space with texture",
+      },
+      {
+        id: 5,
+        title: "Outdoor Patio",
+        category: "Outdoor",
+        type: "Exterior",
+        imageUrl: "/placeholder.svg?height=400&width=300&text=Outdoor+Patio",
+        description: "Relaxing outdoor patio space with garden views.",
+        tags: ["outdoor", "patio", "exterior", "garden", "relaxing"],
+        color: "natural",
+        createdBy: "Lisa Park",
+        createdAt: "2024-01-11",
+        likes: 42,
+        isLiked: true,
+        isBookmarked: false,
+        source: "Better Homes & Gardens",
+        notes: "Perfect for outdoor dining and conversation scenes",
+      },
+      {
+        id: 6,
+        title: "Contemporary Office",
+        category: "Office",
+        type: "Interior",
+        imageUrl: "/placeholder.svg?height=400&width=300&text=Contemporary+Office",
+        description: "A modern and productive office environment.",
+        tags: ["contemporary", "office", "interior", "professional", "modern"],
+        color: "cool",
+        createdBy: "Alex Kim",
+        createdAt: "2024-01-10",
+        likes: 27,
+        isLiked: false,
+        isBookmarked: true,
+        source: "Office Design Magazine",
+        notes: "Corporate scenes and business meetings",
+      },
+    ]
+
+    if (projectId === "2") {
+      initialItems.shift();
+      initialItems.forEach(item => item.category = "Architecture");
+    } else if (projectId === "3") {
+      initialItems.shift();
+      initialItems.shift();
+      initialItems.forEach(item => item.notes = "Project 3 Note");
+    }
+
+    MOCK_MOODBOARD_STORE[projectId] = initialItems;
+    setMoodboardItems(initialItems);
+  }, [projectId])
+
+  useEffect(() => {
+    if (moodboardItems.length > 0 && projectId) {
+      MOCK_MOODBOARD_STORE[projectId] = moodboardItems;
+    }
+  }, [moodboardItems, projectId])
 
   const filteredItems = moodboardItems.filter((item) => {
     const matchesSearch =
@@ -259,17 +289,15 @@ export default function MoodboardModule({
           <div className="flex items-center gap-2 bg-white/10 rounded-lg p-1">
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <Grid3X3 className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <List className="h-4 w-4" />
             </button>
@@ -296,15 +324,14 @@ export default function MoodboardModule({
       {/* Moodboard Grid */}
       {viewMode === "grid" && (
         <div
-          className={`grid gap-4 ${
-            gridSize === 2
-              ? "grid-cols-1 md:grid-cols-2"
-              : gridSize === 3
-                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                : gridSize === 4
-                  ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                  : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
-          }`}
+          className={`grid gap-4 ${gridSize === 2
+            ? "grid-cols-1 md:grid-cols-2"
+            : gridSize === 3
+              ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+              : gridSize === 4
+                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+            }`}
         >
           {filteredItems.map((item) => (
             <div
@@ -322,9 +349,8 @@ export default function MoodboardModule({
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="flex gap-2">
                     <button
-                      className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
-                        item.isLiked ? "bg-red-500 text-white" : "bg-black/50 text-white hover:bg-red-500"
-                      }`}
+                      className={`p-2 rounded-full backdrop-blur-sm transition-colors ${item.isLiked ? "bg-red-500 text-white" : "bg-black/50 text-white hover:bg-red-500"
+                        }`}
                       onClick={(e) => {
                         e.stopPropagation()
                         // Handle like
@@ -333,9 +359,8 @@ export default function MoodboardModule({
                       <Heart className="h-3 w-3" />
                     </button>
                     <button
-                      className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
-                        item.isBookmarked ? "bg-yellow-500 text-white" : "bg-black/50 text-white hover:bg-yellow-500"
-                      }`}
+                      className={`p-2 rounded-full backdrop-blur-sm transition-colors ${item.isBookmarked ? "bg-yellow-500 text-white" : "bg-black/50 text-white hover:bg-yellow-500"
+                        }`}
                       onClick={(e) => {
                         e.stopPropagation()
                         // Handle bookmark
@@ -466,19 +491,17 @@ export default function MoodboardModule({
                   />
                   <div className="flex items-center gap-4 mb-4">
                     <button
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                        selectedItem.isLiked ? "bg-red-500 text-white" : "bg-white/10 text-white hover:bg-red-500"
-                      }`}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${selectedItem.isLiked ? "bg-red-500 text-white" : "bg-white/10 text-white hover:bg-red-500"
+                        }`}
                     >
                       <Heart className="h-4 w-4" />
                       {selectedItem.likes || 0}
                     </button>
                     <button
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                        selectedItem.isBookmarked
-                          ? "bg-yellow-500 text-white"
-                          : "bg-white/10 text-white hover:bg-yellow-500"
-                      }`}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${selectedItem.isBookmarked
+                        ? "bg-yellow-500 text-white"
+                        : "bg-white/10 text-white hover:bg-yellow-500"
+                        }`}
                     >
                       <Bookmark className="h-4 w-4" />
                       Bookmark

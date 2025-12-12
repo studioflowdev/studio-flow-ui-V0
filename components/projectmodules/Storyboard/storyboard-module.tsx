@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Camera,
   Upload,
@@ -23,7 +23,10 @@ import Image from "next/image"
 
 interface StoryboardModuleProps {
   searchQuery?: string
+  projectId?: string
 }
+
+const MOCK_SHOTS_STORE: Record<string, Shot[]> = {}
 
 interface Shot {
   id: string
@@ -43,7 +46,7 @@ interface Shot {
   generatedOptions?: string[]
 }
 
-export default function StoryboardModule({ searchQuery = "" }: StoryboardModuleProps) {
+export default function StoryboardModule({ searchQuery = "", projectId = "1" }: StoryboardModuleProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list" | "timeline">("grid")
   const [selectedShot, setSelectedShot] = useState<Shot | null>(null)
   const [showAIGenerator, setShowAIGenerator] = useState(false)
@@ -53,68 +56,94 @@ export default function StoryboardModule({ searchQuery = "" }: StoryboardModuleP
   const [generatedImages, setGeneratedImages] = useState<string[]>([])
   const [showPromptEnhancer, setShowPromptEnhancer] = useState(false)
 
-  const [shots, setShots] = useState<Shot[]>([
-    {
-      id: "1",
-      sceneNumber: "1",
-      shotNumber: "1A",
-      title: "Establishing shot of the futuristic city at dawn",
-      description: "Camera slowly pans across the cityscape revealing flying cars and holographic advertisements",
-      cameraAngle: "Wide",
-      movement: "Slow pan left to right",
-      duration: "8s",
-      status: "approved",
-      lastModified: "2 hours ago",
-      author: "Sarah Chen",
-      notes: ["VFX heavy scene", "Drone shots required"],
-      images: ["/placeholder.svg?height=300&width=400"],
-    },
-    {
-      id: "2",
-      sceneNumber: "1",
-      shotNumber: "1B",
-      title: "Close-up of protagonist looking out window",
-      description: "Character turns from window, expression shows determination",
-      cameraAngle: "Close Up",
-      movement: "Static, then slow forward",
-      duration: "4s",
-      status: "review",
-      lastModified: "1 day ago",
-      author: "Emma Davis",
-      notes: ["Need to establish character motivation", "Add more world-building details"],
-      images: ["/placeholder.svg?height=300&width=400"],
-    },
-    {
-      id: "3",
-      sceneNumber: "2",
-      shotNumber: "2A",
-      title: "Medium shot of holographic interface activation",
-      description: "Holographic displays come to life around the character",
-      cameraAngle: "Medium Shot",
-      movement: "Slight dolly forward",
-      duration: "3s",
-      status: "draft",
-      lastModified: "3 hours ago",
-      author: "David Kim",
-      notes: ["Needs more tension", "Consider adding flashback"],
-      images: ["/placeholder.svg?height=300&width=400"],
-    },
-    {
-      id: "4",
-      sceneNumber: "2",
-      shotNumber: "2B",
-      title: "Over-shoulder shot of character reading data",
-      description: "Character discovers encrypted information on holographic display",
-      cameraAngle: "Over Shoulder",
-      movement: "Static",
-      duration: "5s",
-      status: "revision",
-      lastModified: "5 hours ago",
-      author: "Lisa Park",
-      notes: ["Adjust lighting for better readability", "VFX team needs reference"],
-      images: ["/placeholder.svg?height=300&width=400"],
-    },
-  ])
+  const [shots, setShots] = useState<Shot[]>([])
+
+  useEffect(() => {
+    if (MOCK_SHOTS_STORE[projectId]) {
+      setShots(MOCK_SHOTS_STORE[projectId])
+      return
+    }
+
+    const initialShots: Shot[] = [
+      {
+        id: "1",
+        sceneNumber: "1",
+        shotNumber: "1A",
+        title: "Establishing shot of the futuristic city at dawn",
+        description: "Camera slowly pans across the cityscape revealing flying cars and holographic advertisements",
+        cameraAngle: "Wide",
+        movement: "Slow pan left to right",
+        duration: "8s",
+        status: "approved",
+        lastModified: "2 hours ago",
+        author: "Sarah Chen",
+        notes: ["VFX heavy scene", "Drone shots required"],
+        images: ["/placeholder.svg?height=300&width=400"],
+      },
+      {
+        id: "2",
+        sceneNumber: "1",
+        shotNumber: "1B",
+        title: "Close-up of protagonist looking out window",
+        description: "Character turns from window, expression shows determination",
+        cameraAngle: "Close Up",
+        movement: "Static, then slow forward",
+        duration: "4s",
+        status: "review",
+        lastModified: "1 day ago",
+        author: "Emma Davis",
+        notes: ["Need to establish character motivation", "Add more world-building details"],
+        images: ["/placeholder.svg?height=300&width=400"],
+      },
+      {
+        id: "3",
+        sceneNumber: "2",
+        shotNumber: "2A",
+        title: "Medium shot of holographic interface activation",
+        description: "Holographic displays come to life around the character",
+        cameraAngle: "Medium Shot",
+        movement: "Slight dolly forward",
+        duration: "3s",
+        status: "draft",
+        lastModified: "3 hours ago",
+        author: "David Kim",
+        notes: ["Needs more tension", "Consider adding flashback"],
+        images: ["/placeholder.svg?height=300&width=400"],
+      },
+      {
+        id: "4",
+        sceneNumber: "2",
+        shotNumber: "2B",
+        title: "Over-shoulder shot of character reading data",
+        description: "Character discovers encrypted information on holographic display",
+        cameraAngle: "Over Shoulder",
+        movement: "Static",
+        duration: "5s",
+        status: "revision",
+        lastModified: "5 hours ago",
+        author: "Lisa Park",
+        notes: ["Adjust lighting for better readability", "VFX team needs reference"],
+        images: ["/placeholder.svg?height=300&width=400"],
+      },
+    ]
+
+    if (projectId === "2") {
+      initialShots.shift()
+      initialShots[0].title = "Urban Legend Opening"
+    } else if (projectId === "3") {
+      initialShots.pop()
+      initialShots[0].title = "Summer Vibes Intro"
+    }
+
+    MOCK_SHOTS_STORE[projectId] = initialShots
+    setShots(initialShots)
+  }, [projectId])
+
+  useEffect(() => {
+    if (shots.length > 0 && projectId) {
+      MOCK_SHOTS_STORE[projectId] = shots
+    }
+  }, [shots, projectId])
 
   const handleAIGeneration = async (shot: Shot) => {
     setCurrentShotForAI(shot)
@@ -261,9 +290,8 @@ export default function StoryboardModule({ searchQuery = "" }: StoryboardModuleP
                     {shot.images.map((image, index) => (
                       <div
                         key={index}
-                        className={`relative aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-colors ${
-                          currentImageIndex === index ? "border-blue-400" : "border-transparent"
-                        }`}
+                        className={`relative aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-colors ${currentImageIndex === index ? "border-blue-400" : "border-transparent"
+                          }`}
                         onClick={(e) => {
                           e.stopPropagation()
                           setCurrentImageIndex(index)
@@ -434,25 +462,22 @@ export default function StoryboardModule({ searchQuery = "" }: StoryboardModuleP
           <div className="flex items-center gap-2 bg-white/10 rounded-lg p-1">
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               Grid
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               List
             </button>
             <button
               onClick={() => setViewMode("timeline")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "timeline" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "timeline" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               Timeline
             </button>

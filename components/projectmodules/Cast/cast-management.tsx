@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Users, Plus, Edit, Phone, Mail, Calendar, CheckCircle, AlertTriangle, X, Camera, Download } from "lucide-react"
 
 interface CastMember {
@@ -28,92 +28,122 @@ interface CastManagementProps {
     status: string
     availability: string
   }
+  projectId?: string
 }
+
+const MOCK_CAST_STORE: Record<string, CastMember[]> = {}
 
 export default function CastManagement({
   searchQuery = "",
   filters = { role: "all", status: "all", availability: "all" },
+  projectId = "1",
 }: CastManagementProps) {
   const [selectedMember, setSelectedMember] = useState<CastMember | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [castMembers, setCastMembers] = useState<CastMember[]>([])
 
-  const castMembers: CastMember[] = [
-    {
-      id: 1,
-      name: "John Doe",
-      character: "Hero",
-      role: "lead",
-      status: "active",
-      availability: "available",
-      phone: "(555) 123-4567",
-      email: "john.doe@email.com",
-      agent: "CAA - Sarah Johnson",
-      headshot: "/placeholder.svg?height=300&width=200&text=John+Doe",
-      scenes: ["Scene 1", "Scene 5", "Scene 12"],
-      wardrobe: ["Hero Costume", "Casual Wear", "Formal Suit"],
-      callTimes: [
-        { date: "2024-01-20", time: "6:00 AM", location: "Studio A" },
-        { date: "2024-01-22", time: "8:00 AM", location: "Location B" },
-      ],
-      notes: "Experienced actor with strong action background.",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      character: "Sidekick",
-      role: "supporting",
-      status: "inactive",
-      availability: "unavailable",
-      phone: "(555) 987-6543",
-      email: "jane.smith@email.com",
-      headshot: "/placeholder.svg?height=300&width=200&text=Jane+Smith",
-      scenes: ["Scene 2", "Scene 8"],
-      wardrobe: ["Sidekick Outfit", "Street Clothes"],
-      notes: "Great chemistry with lead actor.",
-    },
-    {
-      id: 3,
-      name: "Peter Jones",
-      character: "Villain",
-      role: "antagonist",
-      status: "active",
-      availability: "available",
-      phone: "(555) 456-7890",
-      email: "peter.jones@email.com",
-      headshot: "/placeholder.svg?height=300&width=200&text=Peter+Jones",
-      scenes: ["Scene 3", "Scene 9", "Scene 15"],
-      wardrobe: ["Villain Costume", "Business Suit"],
-      notes: "Method actor, requires preparation time.",
-    },
-    {
-      id: 4,
-      name: "Alice Brown",
-      character: "Love Interest",
-      role: "supporting",
-      status: "active",
-      availability: "available",
-      phone: "(555) 321-0987",
-      email: "alice.brown@email.com",
-      headshot: "/placeholder.svg?height=300&width=200&text=Alice+Brown",
-      scenes: ["Scene 4", "Scene 11"],
-      wardrobe: ["Evening Gown", "Casual Dress"],
-      notes: "Professional dancer, great for choreographed scenes.",
-    },
-    {
-      id: 5,
-      name: "Bob Williams",
-      character: "Mentor",
-      role: "supporting",
-      status: "inactive",
-      availability: "unavailable",
-      phone: "(555) 654-3210",
-      email: "bob.williams@email.com",
-      headshot: "/placeholder.svg?height=300&width=200&text=Bob+Williams",
-      scenes: ["Scene 6", "Scene 13"],
-      wardrobe: ["Wise Man Robes", "Modern Clothes"],
-      notes: "Veteran actor with 30+ years experience.",
-    },
-  ]
+  useEffect(() => {
+    if (MOCK_CAST_STORE[projectId]) {
+      setCastMembers(MOCK_CAST_STORE[projectId])
+      return
+    }
+
+    const initialCast: CastMember[] = [
+      {
+        id: 1,
+        name: "John Doe",
+        character: "Hero",
+        role: "lead",
+        status: "active",
+        availability: "available",
+        phone: "(555) 123-4567",
+        email: "john.doe@email.com",
+        agent: "CAA - Sarah Johnson",
+        headshot: "/placeholder.svg?height=300&width=200&text=John+Doe",
+        scenes: ["Scene 1", "Scene 5", "Scene 12"],
+        wardrobe: ["Hero Costume", "Casual Wear", "Formal Suit"],
+        callTimes: [
+          { date: "2024-01-20", time: "6:00 AM", location: "Studio A" },
+          { date: "2024-01-22", time: "8:00 AM", location: "Location B" },
+        ],
+        notes: "Experienced actor with strong action background.",
+      },
+      {
+        id: 2,
+        name: "Jane Smith",
+        character: "Sidekick",
+        role: "supporting",
+        status: "inactive",
+        availability: "unavailable",
+        phone: "(555) 987-6543",
+        email: "jane.smith@email.com",
+        headshot: "/placeholder.svg?height=300&width=200&text=Jane+Smith",
+        scenes: ["Scene 2", "Scene 8"],
+        wardrobe: ["Sidekick Outfit", "Street Clothes"],
+        notes: "Great chemistry with lead actor.",
+      },
+      {
+        id: 3,
+        name: "Peter Jones",
+        character: "Villain",
+        role: "antagonist",
+        status: "active",
+        availability: "available",
+        phone: "(555) 456-7890",
+        email: "peter.jones@email.com",
+        headshot: "/placeholder.svg?height=300&width=200&text=Peter+Jones",
+        scenes: ["Scene 3", "Scene 9", "Scene 15"],
+        wardrobe: ["Villain Costume", "Business Suit"],
+        notes: "Method actor, requires preparation time.",
+      },
+      {
+        id: 4,
+        name: "Alice Brown",
+        character: "Love Interest",
+        role: "supporting",
+        status: "active",
+        availability: "available",
+        phone: "(555) 321-0987",
+        email: "alice.brown@email.com",
+        headshot: "/placeholder.svg?height=300&width=200&text=Alice+Brown",
+        scenes: ["Scene 4", "Scene 11"],
+        wardrobe: ["Evening Gown", "Casual Dress"],
+        notes: "Professional dancer, great for choreographed scenes.",
+      },
+      {
+        id: 5,
+        name: "Bob Williams",
+        character: "Mentor",
+        role: "supporting",
+        status: "inactive",
+        availability: "unavailable",
+        phone: "(555) 654-3210",
+        email: "bob.williams@email.com",
+        headshot: "/placeholder.svg?height=300&width=200&text=Bob+Williams",
+        scenes: ["Scene 6", "Scene 13"],
+        wardrobe: ["Wise Man Robes", "Modern Clothes"],
+        notes: "Veteran actor with 30+ years experience.",
+      },
+    ]
+
+    if (projectId === "2") {
+      initialCast.shift();
+      initialCast[0].name = "Michael Jordan";
+    } else if (projectId === "3") {
+      initialCast.pop();
+      initialCast[0].character = "Surfer Dude";
+    }
+
+    MOCK_CAST_STORE[projectId] = initialCast;
+    setCastMembers(initialCast);
+
+  }, [projectId])
+
+  useEffect(() => {
+    if (castMembers.length > 0 && projectId) {
+      MOCK_CAST_STORE[projectId] = castMembers
+    }
+  }, [castMembers, projectId])
 
   const filteredCast = castMembers.filter((member) => {
     const matchesSearch =

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Users,
   Edit,
@@ -49,122 +49,152 @@ interface UserManagementProps {
     status: string
     role?: string
   }
+  projectId?: string
 }
+
+const MOCK_USER_STORE: Record<string, User[]> = {}
 
 export default function UserManagement({
   searchQuery = "",
   filters = { department: "all", status: "all", role: "all" },
+  projectId = "1",
 }: UserManagementProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [users, setUsers] = useState<User[]>([])
 
-  const users: User[] = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john.doe@example.com",
-      role: "admin",
-      department: "IT",
-      status: "active",
-      avatar: "/placeholder.svg?height=100&width=100&text=JD",
-      phone: "+1 (555) 123-4567",
-      location: "New York, NY",
-      timezone: "EST",
-      lastLogin: "2024-01-20 14:30",
-      joinDate: "2023-01-15",
-      permissions: ["full_access", "user_management", "system_settings", "billing"],
-      projects: ["Project Alpha", "Project Beta", "Project Gamma"],
-      notes: "Senior administrator with full system access",
-      isOnline: true,
-      loginCount: 1247,
-      storageUsed: "2.4 GB",
-      storageLimit: "10 GB",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: "editor",
-      department: "Marketing",
-      status: "active",
-      avatar: "/placeholder.svg?height=100&width=100&text=JS",
-      phone: "+1 (555) 987-6543",
-      location: "Los Angeles, CA",
-      timezone: "PST",
-      lastLogin: "2024-01-20 09:15",
-      joinDate: "2023-03-22",
-      permissions: ["content_edit", "media_upload", "project_access"],
-      projects: ["Project Beta", "Project Delta"],
-      notes: "Lead content editor for marketing materials",
-      isOnline: false,
-      loginCount: 892,
-      storageUsed: "1.8 GB",
-      storageLimit: "5 GB",
-    },
-    {
-      id: 3,
-      name: "Peter Jones",
-      email: "peter.jones@example.com",
-      role: "viewer",
-      department: "Sales",
-      status: "active",
-      avatar: "/placeholder.svg?height=100&width=100&text=PJ",
-      phone: "+1 (555) 456-7890",
-      location: "Chicago, IL",
-      timezone: "CST",
-      lastLogin: "2024-01-19 16:45",
-      joinDate: "2023-06-10",
-      permissions: ["view_only", "download_assets"],
-      projects: ["Project Alpha"],
-      notes: "Sales team member with view-only access",
-      isOnline: false,
-      loginCount: 234,
-      storageUsed: "0.5 GB",
-      storageLimit: "2 GB",
-    },
-    {
-      id: 4,
-      name: "Mary Brown",
-      email: "mary.brown@example.com",
-      role: "manager",
-      department: "HR",
-      status: "active",
-      avatar: "/placeholder.svg?height=100&width=100&text=MB",
-      phone: "+1 (555) 321-0987",
-      location: "Austin, TX",
-      timezone: "CST",
-      lastLogin: "2024-01-20 11:20",
-      joinDate: "2023-02-28",
-      permissions: ["user_management", "project_management", "reports"],
-      projects: ["Project Gamma", "Project Delta", "Project Epsilon"],
-      notes: "HR manager overseeing team coordination",
-      isOnline: true,
-      loginCount: 567,
-      storageUsed: "3.1 GB",
-      storageLimit: "8 GB",
-    },
-    {
-      id: 5,
-      name: "David Wilson",
-      email: "david.wilson@example.com",
-      role: "contributor",
-      department: "Design",
-      status: "pending",
-      avatar: "/placeholder.svg?height=100&width=100&text=DW",
-      phone: "+1 (555) 654-3210",
-      location: "Seattle, WA",
-      timezone: "PST",
-      joinDate: "2024-01-18",
-      permissions: ["content_create", "media_upload"],
-      projects: ["Project Epsilon"],
-      notes: "New team member pending approval",
-      isOnline: false,
-      loginCount: 3,
-      storageUsed: "0.1 GB",
-      storageLimit: "3 GB",
-    },
-  ]
+  useEffect(() => {
+    if (MOCK_USER_STORE[projectId]) {
+      setUsers(MOCK_USER_STORE[projectId])
+      return
+    }
+
+    const initialUsers: User[] = [
+      {
+        id: 1,
+        name: "John Doe",
+        email: "john.doe@example.com",
+        role: "admin",
+        department: "IT",
+        status: "active",
+        avatar: "/placeholder.svg?height=100&width=100&text=JD",
+        phone: "+1 (555) 123-4567",
+        location: "New York, NY",
+        timezone: "EST",
+        lastLogin: "2024-01-20 14:30",
+        joinDate: "2023-01-15",
+        permissions: ["full_access", "user_management", "system_settings", "billing"],
+        projects: ["Project Alpha", "Project Beta", "Project Gamma"],
+        notes: "Senior administrator with full system access",
+        isOnline: true,
+        loginCount: 1247,
+        storageUsed: "2.4 GB",
+        storageLimit: "10 GB",
+      },
+      {
+        id: 2,
+        name: "Jane Smith",
+        email: "jane.smith@example.com",
+        role: "editor",
+        department: "Marketing",
+        status: "active",
+        avatar: "/placeholder.svg?height=100&width=100&text=JS",
+        phone: "+1 (555) 987-6543",
+        location: "Los Angeles, CA",
+        timezone: "PST",
+        lastLogin: "2024-01-20 09:15",
+        joinDate: "2023-03-22",
+        permissions: ["content_edit", "media_upload", "project_access"],
+        projects: ["Project Beta", "Project Delta"],
+        notes: "Lead content editor for marketing materials",
+        isOnline: false,
+        loginCount: 892,
+        storageUsed: "1.8 GB",
+        storageLimit: "5 GB",
+      },
+      {
+        id: 3,
+        name: "Peter Jones",
+        email: "peter.jones@example.com",
+        role: "viewer",
+        department: "Sales",
+        status: "active",
+        avatar: "/placeholder.svg?height=100&width=100&text=PJ",
+        phone: "+1 (555) 456-7890",
+        location: "Chicago, IL",
+        timezone: "CST",
+        lastLogin: "2024-01-19 16:45",
+        joinDate: "2023-06-10",
+        permissions: ["view_only", "download_assets"],
+        projects: ["Project Alpha"],
+        notes: "Sales team member with view-only access",
+        isOnline: false,
+        loginCount: 234,
+        storageUsed: "0.5 GB",
+        storageLimit: "2 GB",
+      },
+      {
+        id: 4,
+        name: "Mary Brown",
+        email: "mary.brown@example.com",
+        role: "manager",
+        department: "HR",
+        status: "active",
+        avatar: "/placeholder.svg?height=100&width=100&text=MB",
+        phone: "+1 (555) 321-0987",
+        location: "Austin, TX",
+        timezone: "CST",
+        lastLogin: "2024-01-20 11:20",
+        joinDate: "2023-02-28",
+        permissions: ["user_management", "project_management", "reports"],
+        projects: ["Project Gamma", "Project Delta", "Project Epsilon"],
+        notes: "HR manager overseeing team coordination",
+        isOnline: true,
+        loginCount: 567,
+        storageUsed: "3.1 GB",
+        storageLimit: "8 GB",
+      },
+      {
+        id: 5,
+        name: "David Wilson",
+        email: "david.wilson@example.com",
+        role: "contributor",
+        department: "Design",
+        status: "pending",
+        avatar: "/placeholder.svg?height=100&width=100&text=DW",
+        phone: "+1 (555) 654-3210",
+        location: "Seattle, WA",
+        timezone: "PST",
+        joinDate: "2024-01-18",
+        permissions: ["content_create", "media_upload"],
+        projects: ["Project Epsilon"],
+        notes: "New team member pending approval",
+        isOnline: false,
+        loginCount: 3,
+        storageUsed: "0.1 GB",
+        storageLimit: "3 GB",
+      },
+    ]
+
+    if (projectId === "2") {
+      initialUsers.pop();
+      initialUsers[0].name = "Project 2 Admin";
+    } else if (projectId === "3") {
+      initialUsers.shift();
+      initialUsers[0].name = "Project 3 Viewer";
+    }
+
+    MOCK_USER_STORE[projectId] = initialUsers;
+    setUsers(initialUsers);
+
+  }, [projectId])
+
+  useEffect(() => {
+    if (users.length > 0 && projectId) {
+      MOCK_USER_STORE[projectId] = users;
+    }
+  }, [users, projectId])
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -303,17 +333,15 @@ export default function UserManagement({
         <div className="flex items-center gap-2 bg-white/10 rounded-lg p-1">
           <button
             onClick={() => setViewMode("grid")}
-            className={`px-3 py-2 rounded-md transition-colors ${
-              viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-            }`}
+            className={`px-3 py-2 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+              }`}
           >
             Grid
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-2 rounded-md transition-colors ${
-              viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-            }`}
+            className={`px-3 py-2 rounded-md transition-colors ${viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+              }`}
           >
             List
           </button>
@@ -387,11 +415,10 @@ export default function UserManagement({
                     <div
                       className="bg-blue-500 h-1 rounded-full"
                       style={{
-                        width: `${
-                          user.storageUsed && user.storageLimit
+                        width: `${user.storageUsed && user.storageLimit
                             ? (Number.parseFloat(user.storageUsed) / Number.parseFloat(user.storageLimit)) * 100
                             : 0
-                        }%`,
+                          }%`,
                       }}
                     ></div>
                   </div>
@@ -606,14 +633,13 @@ export default function UserManagement({
                         <div
                           className="bg-blue-500 h-2 rounded-full"
                           style={{
-                            width: `${
-                              selectedUser.storageUsed && selectedUser.storageLimit
+                            width: `${selectedUser.storageUsed && selectedUser.storageLimit
                                 ? (
-                                    Number.parseFloat(selectedUser.storageUsed) /
-                                      Number.parseFloat(selectedUser.storageLimit)
-                                  ) * 100
+                                  Number.parseFloat(selectedUser.storageUsed) /
+                                  Number.parseFloat(selectedUser.storageLimit)
+                                ) * 100
                                 : 0
-                            }%`,
+                              }%`,
                           }}
                         ></div>
                       </div>

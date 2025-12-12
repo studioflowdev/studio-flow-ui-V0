@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   BarChart3,
   TrendingUp,
@@ -45,89 +45,137 @@ interface AnalyticsData {
   }
 }
 
-export default function AnalyticsDashboard() {
+
+interface DashboardData {
+  analyticsData: AnalyticsData
+  projectStatusData: { name: string; count: number; color: string }[]
+  recentActivity: {
+    id: number
+    type: string
+    message: string
+    time: string
+    icon: any
+    color: string
+  }[]
+  topPerformingProjects: {
+    name: string
+    efficiency: number
+    budget: number
+    timeline: string
+  }[]
+}
+
+const MOCK_ANALYTICS_STORE: Record<string, DashboardData> = {}
+
+export default function AnalyticsDashboard({ projectId = "1" }: { projectId?: string }) {
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "1y">("30d")
   const [selectedMetric, setSelectedMetric] = useState<"overview" | "projects" | "team" | "financial" | "time">(
     "overview",
   )
 
   // Sample analytics data
-  const analyticsData: AnalyticsData = {
-    projectMetrics: {
-      totalProjects: 24,
-      activeProjects: 8,
-      completedProjects: 16,
-      onTimeDelivery: 87,
-      budgetEfficiency: 94,
-    },
-    teamMetrics: {
-      totalTeamMembers: 32,
-      activeMembers: 28,
-      productivity: 89,
-      collaboration: 92,
-    },
-    financialMetrics: {
-      totalBudget: 4200000,
-      spentBudget: 3150000,
-      projectedSavings: 420000,
-      costPerProject: 175000,
-    },
-    timeMetrics: {
-      averageProjectDuration: 45,
-      timeToCompletion: 18,
-      productivityHours: 1240,
-      meetingHours: 180,
-    },
-  }
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
 
-  const projectStatusData = [
-    { name: "Development", count: 3, color: "bg-gray-500" },
-    { name: "Pre-Production", count: 2, color: "bg-yellow-500" },
-    { name: "Production", count: 3, color: "bg-blue-500" },
-    { name: "Post-Production", count: 4, color: "bg-purple-500" },
-    { name: "Completed", count: 12, color: "bg-green-500" },
-  ]
+  useEffect(() => {
+    if (MOCK_ANALYTICS_STORE[projectId]) {
+      setDashboardData(MOCK_ANALYTICS_STORE[projectId])
+      return
+    }
 
-  const recentActivity = [
-    {
-      id: 1,
-      type: "project_completed",
-      message: "Midnight Chronicles completed post-production",
-      time: "2 hours ago",
-      icon: CheckCircle,
-      color: "text-green-400",
-    },
-    {
-      id: 2,
-      type: "budget_alert",
-      message: "Urban Legends is 15% over budget",
-      time: "4 hours ago",
-      icon: AlertTriangle,
-      color: "text-yellow-400",
-    },
-    {
-      id: 3,
-      type: "team_joined",
-      message: "3 new team members joined Summer Vibes",
-      time: "6 hours ago",
-      icon: Users,
-      color: "text-blue-400",
-    },
-    {
-      id: 4,
-      type: "milestone_reached",
-      message: "VFX pipeline reached 75% completion",
-      time: "1 day ago",
-      icon: Target,
-      color: "text-purple-400",
-    },
-  ]
+    const initialData: DashboardData = {
+      analyticsData: {
+        projectMetrics: {
+          totalProjects: 24,
+          activeProjects: 8,
+          completedProjects: 16,
+          onTimeDelivery: 87,
+          budgetEfficiency: 94,
+        },
+        teamMetrics: {
+          totalTeamMembers: 32,
+          activeMembers: 28,
+          productivity: 89,
+          collaboration: 92,
+        },
+        financialMetrics: {
+          totalBudget: 4200000,
+          spentBudget: 3150000,
+          projectedSavings: 420000,
+          costPerProject: 175000,
+        },
+        timeMetrics: {
+          averageProjectDuration: 45,
+          timeToCompletion: 18,
+          productivityHours: 1240,
+          meetingHours: 180,
+        },
+      },
+      projectStatusData: [
+        { name: "Development", count: 3, color: "bg-gray-500" },
+        { name: "Pre-Production", count: 2, color: "bg-yellow-500" },
+        { name: "Production", count: 3, color: "bg-blue-500" },
+        { name: "Post-Production", count: 4, color: "bg-purple-500" },
+        { name: "Completed", count: 12, color: "bg-green-500" },
+      ],
+      recentActivity: [
+        {
+          id: 1,
+          type: "project_completed",
+          message: "Midnight Chronicles completed post-production",
+          time: "2 hours ago",
+          icon: CheckCircle,
+          color: "text-green-400",
+        },
+        {
+          id: 2,
+          type: "budget_alert",
+          message: "Urban Legends is 15% over budget",
+          time: "4 hours ago",
+          icon: AlertTriangle,
+          color: "text-yellow-400",
+        },
+        {
+          id: 3,
+          type: "team_joined",
+          message: "3 new team members joined Summer Vibes",
+          time: "6 hours ago",
+          icon: Users,
+          color: "text-blue-400",
+        },
+        {
+          id: 4,
+          type: "milestone_reached",
+          message: "VFX pipeline reached 75% completion",
+          time: "1 day ago",
+          icon: Target,
+          color: "text-purple-400",
+        },
+      ],
+      topPerformingProjects: [
+        { name: "Midnight Chronicles", efficiency: 94, budget: 2500000, timeline: "On Track" },
+        { name: "Urban Legends", efficiency: 78, budget: 850000, timeline: "Delayed" },
+        { name: "Summer Vibes", efficiency: 89, budget: 450000, timeline: "Ahead" },
+      ]
+    }
 
-  const topPerformingProjects = [
-    { name: "Midnight Chronicles", efficiency: 94, budget: 2500000, timeline: "On Track" },
-    { name: "Urban Legends", efficiency: 78, budget: 850000, timeline: "Delayed" },
-    { name: "Summer Vibes", efficiency: 89, budget: 450000, timeline: "Ahead" },
-  ]
+    if (projectId === "2") {
+      initialData.analyticsData.projectMetrics.totalProjects = 12;
+      initialData.analyticsData.financialMetrics.totalBudget = 2100000;
+      initialData.topPerformingProjects[0].name = "Project Beta";
+    } else if (projectId === "3") {
+      initialData.analyticsData.projectMetrics.totalProjects = 5;
+      initialData.analyticsData.financialMetrics.totalBudget = 500000;
+      initialData.topPerformingProjects[0].name = "Indie Movie";
+    }
+
+    MOCK_ANALYTICS_STORE[projectId] = initialData;
+    setDashboardData(initialData);
+
+  }, [projectId])
+
+  if (!dashboardData) return null;
+
+  const { analyticsData, projectStatusData, recentActivity, topPerformingProjects } = dashboardData;
 
   const renderOverviewMetrics = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -238,13 +286,12 @@ export default function AnalyticsDashboard() {
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-white font-medium">{project.name}</h4>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      project.timeline === "On Track"
+                    className={`px-2 py-1 rounded-full text-xs ${project.timeline === "On Track"
                         ? "bg-green-500/20 text-green-400"
                         : project.timeline === "Ahead"
                           ? "bg-blue-500/20 text-blue-400"
                           : "bg-red-500/20 text-red-400"
-                    }`}
+                      }`}
                   >
                     {project.timeline}
                   </span>
@@ -476,9 +523,8 @@ export default function AnalyticsDashboard() {
           <button
             key={tab.id}
             onClick={() => setSelectedMetric(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
-              selectedMetric === tab.id ? "bg-white/20 text-white" : "text-white/70 hover:text-white hover:bg-white/10"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${selectedMetric === tab.id ? "bg-white/20 text-white" : "text-white/70 hover:text-white hover:bg-white/10"
+              }`}
           >
             <tab.icon className="h-4 w-4" />
             {tab.label}

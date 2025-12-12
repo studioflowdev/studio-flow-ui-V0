@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Users,
   Filter,
@@ -94,7 +94,11 @@ interface AIInsight {
   action?: string
 }
 
-export default function TeamCollaborationHub({ searchQuery = "" }: { searchQuery?: string }) {
+
+
+const MOCK_CREW_STORE: Record<string, CrewMember[]> = {}
+
+export default function TeamCollaborationHub({ searchQuery = "", projectId = "1" }: { searchQuery?: string; projectId?: string }) {
   const [viewMode, setViewMode] = useState<"grid" | "list" | "departments">("departments")
   const [gridSize, setGridSize] = useState(3)
   const [filterDepartment, setFilterDepartment] = useState("all")
@@ -105,338 +109,363 @@ export default function TeamCollaborationHub({ searchQuery = "" }: { searchQuery
   const [showDepartmentDetail, setShowDepartmentDetail] = useState(false)
   const [showAIInsights, setShowAIInsights] = useState(true)
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
+  const [crewMembers, setCrewMembers] = useState<CrewMember[]>([])
 
   // Enhanced crew data with department assignments and rates
-  const crewMembers: CrewMember[] = [
-    {
-      id: "1",
-      name: "Sarah Chen",
-      role: "Director",
-      department: "Direction",
-      departmentId: "direction",
-      email: "sarah.chen@midnightchronicles.com",
-      phone: "+1 (555) 123-4567",
-      avatar: "SC",
-      status: "on-set",
-      location: "Stage A",
-      currentProject: "Midnight Chronicles",
-      experience: 12,
-      rating: 4.9,
-      skills: ["Narrative Direction", "Actor Coaching", "Visual Storytelling", "Post Supervision"],
-      certifications: ["DGA Member", "Film School Graduate"],
-      hourlyRate: 62.5,
-      dailyRate: 500,
-      availability: {
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: false,
-        sunday: false,
+  useEffect(() => {
+    if (MOCK_CREW_STORE[projectId]) {
+      setCrewMembers(MOCK_CREW_STORE[projectId])
+      return
+    }
+
+    const initialCrewMembers: CrewMember[] = [
+      {
+        id: "1",
+        name: "Sarah Chen",
+        role: "Director",
+        department: "Direction",
+        departmentId: "direction",
+        email: "sarah.chen@midnightchronicles.com",
+        phone: "+1 (555) 123-4567",
+        avatar: "SC",
+        status: "on-set",
+        location: "Stage A",
+        currentProject: "Midnight Chronicles",
+        experience: 12,
+        rating: 4.9,
+        skills: ["Narrative Direction", "Actor Coaching", "Visual Storytelling", "Post Supervision"],
+        certifications: ["DGA Member", "Film School Graduate"],
+        hourlyRate: 62.5,
+        dailyRate: 500,
+        availability: {
+          monday: true,
+          tuesday: true,
+          wednesday: true,
+          thursday: true,
+          friday: true,
+          saturday: false,
+          sunday: false,
+        },
+        lastActive: "5 minutes ago",
+        totalHours: 320,
+        completedProjects: 8,
+        notes: "Prefers early morning shoots. Excellent with child actors.",
+        emergencyContact: {
+          name: "Michael Chen",
+          phone: "+1 (555) 987-6543",
+          relationship: "Spouse",
+        },
+        equipment: ["Director's Monitor", "Megaphone", "Script Binder"],
+        languages: ["English", "Mandarin"],
+        union: "DGA",
+        startDate: "2024-01-15",
       },
-      lastActive: "5 minutes ago",
-      totalHours: 320,
-      completedProjects: 8,
-      notes: "Prefers early morning shoots. Excellent with child actors.",
-      emergencyContact: {
-        name: "Michael Chen",
-        phone: "+1 (555) 987-6543",
-        relationship: "Spouse",
+      {
+        id: "2",
+        name: "Alex Kim",
+        role: "Director of Photography",
+        department: "Camera",
+        departmentId: "camera",
+        email: "alex.kim@midnightchronicles.com",
+        phone: "+1 (555) 234-5678",
+        avatar: "AK",
+        status: "available",
+        location: "Equipment Room",
+        currentProject: "Midnight Chronicles",
+        experience: 10,
+        rating: 4.8,
+        skills: ["Cinematography", "Lighting Design", "Color Theory", "Camera Operation"],
+        certifications: ["ASC Associate", "RED Certified"],
+        hourlyRate: 50,
+        dailyRate: 400,
+        availability: {
+          monday: true,
+          tuesday: true,
+          wednesday: true,
+          thursday: true,
+          friday: true,
+          saturday: true,
+          sunday: false,
+        },
+        lastActive: "15 minutes ago",
+        totalHours: 280,
+        completedProjects: 15,
+        notes: "Specializes in low-light cinematography. Owns RED camera package.",
+        emergencyContact: {
+          name: "Lisa Kim",
+          phone: "+1 (555) 876-5432",
+          relationship: "Sister",
+          // @ts-ignore
+        },
+        equipment: ["RED Camera", "Lenses", "Monitor", "Tripod"],
+        languages: ["English", "Korean"],
+        union: "IATSE Local 600",
+        startDate: "2024-01-20",
       },
-      equipment: ["Director's Monitor", "Megaphone", "Script Binder"],
-      languages: ["English", "Mandarin"],
-      union: "DGA",
-      startDate: "2024-01-15",
-    },
-    {
-      id: "2",
-      name: "Alex Kim",
-      role: "Director of Photography",
-      department: "Camera",
-      departmentId: "camera",
-      email: "alex.kim@midnightchronicles.com",
-      phone: "+1 (555) 234-5678",
-      avatar: "AK",
-      status: "available",
-      location: "Equipment Room",
-      currentProject: "Midnight Chronicles",
-      experience: 10,
-      rating: 4.8,
-      skills: ["Cinematography", "Lighting Design", "Color Theory", "Camera Operation"],
-      certifications: ["ASC Associate", "RED Certified"],
-      hourlyRate: 50,
-      dailyRate: 400,
-      availability: {
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: true,
-        sunday: false,
+      {
+        id: "3",
+        name: "Emma Davis",
+        role: "Editor",
+        department: "Post-Production",
+        departmentId: "post",
+        email: "emma.davis@midnightchronicles.com",
+        phone: "+1 (555) 345-6789",
+        avatar: "ED",
+        status: "busy",
+        location: "Edit Suite 1",
+        currentProject: "Midnight Chronicles",
+        experience: 8,
+        rating: 4.7,
+        skills: ["Avid Media Composer", "DaVinci Resolve", "Sound Design", "Color Correction"],
+        certifications: ["Avid Certified", "Adobe Certified Expert"],
+        hourlyRate: 37.5,
+        dailyRate: 300,
+        availability: {
+          monday: true,
+          tuesday: true,
+          wednesday: true,
+          thursday: true,
+          friday: true,
+          saturday: false,
+          sunday: false,
+        },
+        lastActive: "2 hours ago",
+        totalHours: 450,
+        completedProjects: 12,
+        notes: "Fast turnaround on rough cuts. Excellent at action sequences.",
+        emergencyContact: {
+          name: "Robert Davis",
+          phone: "+1 (555) 765-4321",
+          relationship: "Father",
+        },
+        equipment: ["Avid System", "Speakers", "Color Monitor"],
+        languages: ["English", "Spanish"],
+        union: "IATSE Local 700",
+        startDate: "2024-01-10",
       },
-      lastActive: "15 minutes ago",
-      totalHours: 280,
-      completedProjects: 15,
-      notes: "Specializes in low-light cinematography. Owns RED camera package.",
-      emergencyContact: {
-        name: "Lisa Kim",
-        phone: "+1 (555) 876-5432",
-        relationship: "Sister",
+      {
+        id: "4",
+        name: "Mike Rodriguez",
+        role: "Sound Mixer",
+        department: "Audio",
+        departmentId: "audio",
+        email: "mike.rodriguez@midnightchronicles.com",
+        phone: "+1 (555) 456-7890",
+        avatar: "MR",
+        status: "on-set",
+        location: "Stage A",
+        currentProject: "Midnight Chronicles",
+        experience: 15,
+        rating: 4.9,
+        skills: ["Location Sound", "Boom Operation", "Wireless Systems", "Post Audio"],
+        certifications: ["CAS Member", "Zaxcom Certified"],
+        hourlyRate: 43.75,
+        dailyRate: 350,
+        availability: {
+          monday: true,
+          tuesday: true,
+          wednesday: true,
+          thursday: true,
+          friday: true,
+          saturday: true,
+          sunday: false,
+        },
+        lastActive: "10 minutes ago",
+        totalHours: 380,
+        completedProjects: 20,
+        notes: "Expert in challenging acoustic environments. Owns full sound package.",
+        emergencyContact: {
+          name: "Maria Rodriguez",
+          phone: "+1 (555) 654-3210",
+          relationship: "Wife",
+        },
+        equipment: ["Sound Mixer", "Boom Poles", "Wireless Mics", "Headphones"],
+        languages: ["English", "Spanish"],
+        union: "IATSE Local 695",
+        startDate: "2024-01-18",
       },
-      equipment: ["RED Camera", "Lenses", "Monitor", "Tripod"],
-      languages: ["English", "Korean"],
-      union: "IATSE Local 600",
-      startDate: "2024-01-20",
-    },
-    {
-      id: "3",
-      name: "Emma Davis",
-      role: "Editor",
-      department: "Post-Production",
-      departmentId: "post",
-      email: "emma.davis@midnightchronicles.com",
-      phone: "+1 (555) 345-6789",
-      avatar: "ED",
-      status: "busy",
-      location: "Edit Suite 1",
-      currentProject: "Midnight Chronicles",
-      experience: 8,
-      rating: 4.7,
-      skills: ["Avid Media Composer", "DaVinci Resolve", "Sound Design", "Color Correction"],
-      certifications: ["Avid Certified", "Adobe Certified Expert"],
-      hourlyRate: 37.5,
-      dailyRate: 300,
-      availability: {
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: false,
-        sunday: false,
+      {
+        id: "5",
+        name: "Lisa Park",
+        role: "Gaffer",
+        department: "Lighting",
+        departmentId: "lighting",
+        email: "lisa.park@midnightchronicles.com",
+        phone: "+1 (555) 567-8901",
+        avatar: "LP",
+        status: "available",
+        location: "Lighting Truck",
+        currentProject: "Midnight Chronicles",
+        experience: 12,
+        rating: 4.8,
+        skills: ["Lighting Design", "Electrical", "LED Systems", "Rigging"],
+        certifications: ["IATSE Electrician", "OSHA Certified"],
+        hourlyRate: 40,
+        dailyRate: 320,
+        availability: {
+          monday: true,
+          tuesday: true,
+          wednesday: true,
+          thursday: true,
+          friday: true,
+          saturday: true,
+          sunday: false,
+        },
+        lastActive: "30 minutes ago",
+        totalHours: 290,
+        completedProjects: 18,
+        notes: "Innovative with LED technology. Safety-focused approach.",
+        emergencyContact: {
+          name: "David Park",
+          phone: "+1 (555) 543-2109",
+          relationship: "Brother",
+        },
+        equipment: ["LED Panels", "Cables", "Stands", "Meters"],
+        languages: ["English", "Korean"],
+        union: "IATSE Local 728",
+        startDate: "2024-01-22",
       },
-      lastActive: "2 hours ago",
-      totalHours: 450,
-      completedProjects: 12,
-      notes: "Fast turnaround on rough cuts. Excellent at action sequences.",
-      emergencyContact: {
-        name: "Robert Davis",
-        phone: "+1 (555) 765-4321",
-        relationship: "Father",
+      {
+        id: "6",
+        name: "Tom Wilson",
+        role: "Key Grip",
+        department: "Grip",
+        departmentId: "grip",
+        email: "tom.wilson@midnightchronicles.com",
+        phone: "+1 (555) 678-9012",
+        avatar: "TW",
+        status: "busy",
+        location: "Production Office",
+        currentProject: "Midnight Chronicles",
+        experience: 14,
+        rating: 4.7,
+        skills: ["Rigging", "Camera Support", "Safety", "Equipment Maintenance"],
+        certifications: ["IATSE Grip", "Safety Certified"],
+        hourlyRate: 35,
+        dailyRate: 280,
+        availability: {
+          monday: true,
+          tuesday: true,
+          wednesday: true,
+          thursday: true,
+          friday: true,
+          saturday: true,
+          sunday: true,
+        },
+        lastActive: "1 hour ago",
+        totalHours: 420,
+        completedProjects: 25,
+        notes: "Excellent at rigging complex setups. Very safety-conscious.",
+        emergencyContact: {
+          name: "Sarah Wilson",
+          phone: "+1 (555) 432-1098",
+          relationship: "Wife",
+        },
+        equipment: ["Grip Truck", "C-Stands", "Sandbags", "Clamps"],
+        languages: ["English"],
+        union: "IATSE Local 80",
+        startDate: "2024-01-12",
       },
-      equipment: ["Avid System", "Speakers", "Color Monitor"],
-      languages: ["English", "Spanish"],
-      union: "IATSE Local 700",
-      startDate: "2024-01-10",
-    },
-    {
-      id: "4",
-      name: "Mike Rodriguez",
-      role: "Sound Mixer",
-      department: "Audio",
-      departmentId: "audio",
-      email: "mike.rodriguez@midnightchronicles.com",
-      phone: "+1 (555) 456-7890",
-      avatar: "MR",
-      status: "on-set",
-      location: "Stage A",
-      currentProject: "Midnight Chronicles",
-      experience: 15,
-      rating: 4.9,
-      skills: ["Location Sound", "Boom Operation", "Wireless Systems", "Post Audio"],
-      certifications: ["CAS Member", "Zaxcom Certified"],
-      hourlyRate: 43.75,
-      dailyRate: 350,
-      availability: {
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: true,
-        sunday: false,
+      {
+        id: "7",
+        name: "Jake Martinez",
+        role: "Camera Operator",
+        department: "Camera",
+        departmentId: "camera",
+        email: "jake.martinez@midnightchronicles.com",
+        phone: "+1 (555) 789-0123",
+        avatar: "JM",
+        status: "available",
+        location: "Camera Prep",
+        currentProject: "Midnight Chronicles",
+        experience: 6,
+        rating: 4.5,
+        skills: ["Steadicam", "Handheld", "Remote Heads", "Focus Pulling"],
+        certifications: ["Steadicam Certified", "Remote Head Operator"],
+        hourlyRate: 37.5,
+        dailyRate: 300,
+        availability: {
+          monday: true,
+          tuesday: true,
+          wednesday: true,
+          thursday: true,
+          friday: true,
+          saturday: false,
+          sunday: false,
+        },
+        lastActive: "45 minutes ago",
+        totalHours: 180,
+        completedProjects: 8,
+        notes: "Excellent steadicam work. Quick setup times.",
+        emergencyContact: {
+          name: "Carmen Martinez",
+          phone: "+1 (555) 321-0987",
+          relationship: "Mother",
+        },
+        equipment: ["Steadicam", "Wireless Follow Focus", "Monitor"],
+        languages: ["English", "Spanish"],
+        union: "IATSE Local 600",
+        startDate: "2024-01-25",
       },
-      lastActive: "10 minutes ago",
-      totalHours: 380,
-      completedProjects: 20,
-      notes: "Expert in challenging acoustic environments. Owns full sound package.",
-      emergencyContact: {
-        name: "Maria Rodriguez",
-        phone: "+1 (555) 654-3210",
-        relationship: "Wife",
+      {
+        id: "8",
+        name: "Sophie Brown",
+        role: "Boom Operator",
+        department: "Audio",
+        departmentId: "audio",
+        email: "sophie.brown@midnightchronicles.com",
+        phone: "+1 (555) 890-1234",
+        avatar: "SB",
+        status: "on-set",
+        location: "Stage A",
+        currentProject: "Midnight Chronicles",
+        experience: 4,
+        rating: 4.3,
+        skills: ["Boom Operation", "Wireless Systems", "Sound Mixing", "Location Recording"],
+        certifications: ["Audio Engineering Certificate"],
+        hourlyRate: 25,
+        dailyRate: 200,
+        availability: {
+          monday: true,
+          tuesday: true,
+          wednesday: true,
+          thursday: true,
+          friday: true,
+          saturday: true,
+          sunday: false,
+        },
+        lastActive: "20 minutes ago",
+        totalHours: 150,
+        completedProjects: 5,
+        notes: "Great ear for dialogue. Very reliable and punctual.",
+        emergencyContact: {
+          name: "James Brown",
+          phone: "+1 (555) 210-9876",
+          relationship: "Father",
+        },
+        equipment: ["Boom Poles", "Windscreens", "Headphones"],
+        languages: ["English", "French"],
+        union: "IATSE Local 695",
+        startDate: "2024-02-01",
       },
-      equipment: ["Sound Mixer", "Boom Poles", "Wireless Mics", "Headphones"],
-      languages: ["English", "Spanish"],
-      union: "IATSE Local 695",
-      startDate: "2024-01-18",
-    },
-    {
-      id: "5",
-      name: "Lisa Park",
-      role: "Gaffer",
-      department: "Lighting",
-      departmentId: "lighting",
-      email: "lisa.park@midnightchronicles.com",
-      phone: "+1 (555) 567-8901",
-      avatar: "LP",
-      status: "available",
-      location: "Lighting Truck",
-      currentProject: "Midnight Chronicles",
-      experience: 12,
-      rating: 4.8,
-      skills: ["Lighting Design", "Electrical", "LED Systems", "Rigging"],
-      certifications: ["IATSE Electrician", "OSHA Certified"],
-      hourlyRate: 40,
-      dailyRate: 320,
-      availability: {
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: true,
-        sunday: false,
-      },
-      lastActive: "30 minutes ago",
-      totalHours: 290,
-      completedProjects: 18,
-      notes: "Innovative with LED technology. Safety-focused approach.",
-      emergencyContact: {
-        name: "David Park",
-        phone: "+1 (555) 543-2109",
-        relationship: "Brother",
-      },
-      equipment: ["LED Panels", "Cables", "Stands", "Meters"],
-      languages: ["English", "Korean"],
-      union: "IATSE Local 728",
-      startDate: "2024-01-22",
-    },
-    {
-      id: "6",
-      name: "Tom Wilson",
-      role: "Key Grip",
-      department: "Grip",
-      departmentId: "grip",
-      email: "tom.wilson@midnightchronicles.com",
-      phone: "+1 (555) 678-9012",
-      avatar: "TW",
-      status: "busy",
-      location: "Production Office",
-      currentProject: "Midnight Chronicles",
-      experience: 14,
-      rating: 4.7,
-      skills: ["Rigging", "Camera Support", "Safety", "Equipment Maintenance"],
-      certifications: ["IATSE Grip", "Safety Certified"],
-      hourlyRate: 35,
-      dailyRate: 280,
-      availability: {
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: true,
-        sunday: true,
-      },
-      lastActive: "1 hour ago",
-      totalHours: 420,
-      completedProjects: 25,
-      notes: "Excellent at rigging complex setups. Very safety-conscious.",
-      emergencyContact: {
-        name: "Sarah Wilson",
-        phone: "+1 (555) 432-1098",
-        relationship: "Wife",
-      },
-      equipment: ["Grip Truck", "C-Stands", "Sandbags", "Clamps"],
-      languages: ["English"],
-      union: "IATSE Local 80",
-      startDate: "2024-01-12",
-    },
-    {
-      id: "7",
-      name: "Jake Martinez",
-      role: "Camera Operator",
-      department: "Camera",
-      departmentId: "camera",
-      email: "jake.martinez@midnightchronicles.com",
-      phone: "+1 (555) 789-0123",
-      avatar: "JM",
-      status: "available",
-      location: "Camera Prep",
-      currentProject: "Midnight Chronicles",
-      experience: 6,
-      rating: 4.5,
-      skills: ["Steadicam", "Handheld", "Remote Heads", "Focus Pulling"],
-      certifications: ["Steadicam Certified", "Remote Head Operator"],
-      hourlyRate: 37.5,
-      dailyRate: 300,
-      availability: {
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: false,
-        sunday: false,
-      },
-      lastActive: "45 minutes ago",
-      totalHours: 180,
-      completedProjects: 8,
-      notes: "Excellent steadicam work. Quick setup times.",
-      emergencyContact: {
-        name: "Carmen Martinez",
-        phone: "+1 (555) 321-0987",
-        relationship: "Mother",
-      },
-      equipment: ["Steadicam", "Wireless Follow Focus", "Monitor"],
-      languages: ["English", "Spanish"],
-      union: "IATSE Local 600",
-      startDate: "2024-01-25",
-    },
-    {
-      id: "8",
-      name: "Sophie Brown",
-      role: "Boom Operator",
-      department: "Audio",
-      departmentId: "audio",
-      email: "sophie.brown@midnightchronicles.com",
-      phone: "+1 (555) 890-1234",
-      avatar: "SB",
-      status: "on-set",
-      location: "Stage A",
-      currentProject: "Midnight Chronicles",
-      experience: 4,
-      rating: 4.3,
-      skills: ["Boom Operation", "Wireless Systems", "Sound Mixing", "Location Recording"],
-      certifications: ["Audio Engineering Certificate"],
-      hourlyRate: 25,
-      dailyRate: 200,
-      availability: {
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: true,
-        sunday: false,
-      },
-      lastActive: "20 minutes ago",
-      totalHours: 150,
-      completedProjects: 5,
-      notes: "Great ear for dialogue. Very reliable and punctual.",
-      emergencyContact: {
-        name: "James Brown",
-        phone: "+1 (555) 210-9876",
-        relationship: "Father",
-      },
-      equipment: ["Boom Poles", "Windscreens", "Headphones"],
-      languages: ["English", "French"],
-      union: "IATSE Local 695",
-      startDate: "2024-02-01",
-    },
-  ]
+    ]
+
+    if (projectId === "2") {
+      initialCrewMembers.pop();
+      initialCrewMembers[0].role = "Senior Director";
+    } else if (projectId === "3") {
+      initialCrewMembers.shift();
+    }
+
+    MOCK_CREW_STORE[projectId] = initialCrewMembers;
+    setCrewMembers(initialCrewMembers);
+  }, [projectId])
+
+  useEffect(() => {
+    if (crewMembers.length > 0 && projectId) {
+      MOCK_CREW_STORE[projectId] = crewMembers;
+    }
+  }, [crewMembers, projectId])
 
   // Enhanced departments with integrated budget tracking
   const departments: CrewDepartment[] = [
@@ -642,9 +671,8 @@ export default function TeamCollaborationHub({ searchQuery = "" }: { searchQuery
   const renderCrewCard = (member: CrewMember, isExpanded: boolean) => (
     <div
       key={member.id}
-      className={`bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 ${
-        isExpanded ? "row-span-2" : ""
-      }`}
+      className={`bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 ${isExpanded ? "row-span-2" : ""
+        }`}
     >
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
@@ -1016,25 +1044,22 @@ export default function TeamCollaborationHub({ searchQuery = "" }: { searchQuery
           <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1 border border-white/20">
             <button
               onClick={() => setViewMode("departments")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "departments" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "departments" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <Building className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <Grid3X3 className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <List className="h-4 w-4" />
             </button>
@@ -1046,9 +1071,8 @@ export default function TeamCollaborationHub({ searchQuery = "" }: { searchQuery
                 <button
                   key={size}
                   onClick={() => setGridSize(size)}
-                  className={`px-2 py-1 rounded text-xs transition-colors ${
-                    gridSize === size ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-                  }`}
+                  className={`px-2 py-1 rounded text-xs transition-colors ${gridSize === size ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                    }`}
                 >
                   {size}
                 </button>

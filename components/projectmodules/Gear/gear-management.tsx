@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Package,
   Plus,
@@ -111,10 +111,13 @@ interface SearchMode {
   moduleSpecific: boolean
 }
 
+const MOCK_GEAR_STORE: Record<string, GearItem[]> = {}
+
 export default function GearManagement({
   searchQuery = "",
   searchMode,
   filters = { category: "all", status: "all", department: "all" },
+  projectId = "1",
 }: {
   searchQuery?: string
   searchMode?: SearchMode
@@ -123,6 +126,7 @@ export default function GearManagement({
     status: string
     department: string
   }
+  projectId?: string
 }) {
   const [viewMode, setViewMode] = useState<"grid" | "list" | "departments">("departments")
   const [gridColumns, setGridColumns] = useState(3)
@@ -134,6 +138,18 @@ export default function GearManagement({
   const [aiPrompt, setAiPrompt] = useState("")
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [showSources, setShowSources] = useState<{ rental: boolean; retail: boolean }>({ rental: false, retail: false })
+  const [gearItems, setGearItems] = useState<GearItem[]>([])
+
+  // Mock Store
+  const MOCK_GEAR_STORE: Record<string, GearItem[]> = {}
+
+  useEffect(() => {
+    // In a real app we'd move this outside component or use a proper store, 
+    // but for local vars inside component, we can just use a module-level variable 
+    // if we want it to persist across re-mounts but not page reloads unless we move it out.
+    // Actually, I'll move MOCK_GEAR_STORE outside in a separate replacement chunk to be safe.
+  }, [])
+
 
   // Sample crew data (integrated from team collaboration)
   const crewMembers: CrewMember[] = [
@@ -316,238 +332,280 @@ export default function GearManagement({
     },
   ]
 
-  // Sample gear data with department assignments
-  const gearItems: GearItem[] = [
-    {
-      id: "1",
-      name: "RED Komodo 6K",
-      category: "camera",
-      brand: "RED Digital Cinema",
-      model: "Komodo 6K",
-      serialNumber: "KMD001234",
-      status: "checked-out",
-      condition: "excellent",
-      dailyRate: 850,
-      replacementValue: 6000,
-      location: "Set A - Stage 2",
-      checkedOutTo: "Alex Kim",
-      checkedOutDate: "2024-01-18",
-      dueDate: "2024-01-30",
-      description: "Professional 6K cinema camera with global shutter",
-      specifications: {
-        Sensor: "Super 35mm",
-        Resolution: "6144 x 3240",
-        "Frame Rates": "Up to 40fps at 6K",
-        Mount: "RF Mount",
-        Recording: "REDCODE RAW",
-      },
-      images: ["/placeholder.svg?height=300&width=400&text=RED+Komodo"],
-      rentalSources: [
-        {
-          id: "1",
-          company: "Camera House Rentals",
-          contact: "Mike Rodriguez",
-          phone: "(555) 123-4567",
-          email: "mike@camerahouse.com",
-          dailyRate: 800,
-          weeklyRate: 4800,
-          availability: "available",
-          rating: 4.8,
-          notes: "Includes lens package deal",
+  useEffect(() => {
+    if (MOCK_GEAR_STORE[projectId || "1"]) {
+      setGearItems(MOCK_GEAR_STORE[projectId || "1"])
+      return
+    }
+
+    const initialGear: GearItem[] = [
+      {
+        id: "1",
+        name: "RED Komodo 6K",
+        category: "camera",
+        brand: "RED Digital Cinema",
+        model: "Komodo 6K",
+        serialNumber: "KMD001234",
+        status: "checked-out",
+        condition: "excellent",
+        dailyRate: 850,
+        replacementValue: 6000,
+        location: "Set A - Stage 2",
+        checkedOutTo: "Alex Kim",
+        checkedOutDate: "2024-01-18",
+        dueDate: "2024-01-30",
+        description: "Professional 6K cinema camera with global shutter",
+        specifications: {
+          Sensor: "Super 35mm",
+          Resolution: "6144 x 3240",
+          "Frame Rates": "Up to 40fps at 6K",
+          Mount: "RF Mount",
+          Recording: "REDCODE RAW",
         },
-      ],
-      retailSources: [
-        {
-          id: "1",
-          retailer: "B&H Photo",
-          price: 5995,
-          url: "https://bhphotovideo.com/red-komodo",
-          inStock: true,
-          rating: 4.7,
-          shippingTime: "2-3 days",
-        },
-      ],
-      lastMaintenance: "2024-01-01",
-      nextMaintenance: "2024-04-01",
-      notes: "Excellent condition. Includes cage and monitor.",
-      departmentId: "camera",
-    },
-    {
-      id: "2",
-      name: "ARRI SkyPanel S60-C",
-      category: "lighting",
-      brand: "ARRI",
-      model: "SkyPanel S60-C",
-      serialNumber: "SKY567890",
-      status: "available",
-      condition: "good",
-      dailyRate: 125,
-      replacementValue: 3200,
-      location: "Lighting Warehouse",
-      description: "LED softlight with full color spectrum control",
-      specifications: {
-        Power: "400W",
-        "Color Temperature": "2800K - 10000K",
-        CRI: ">95",
-        Control: "DMX, Art-Net, sACN",
-        "Beam Angle": "115°",
+        images: ["/placeholder.svg?height=300&width=400&text=RED+Komodo"],
+        rentalSources: [
+          {
+            id: "1",
+            company: "Camera House Rentals",
+            contact: "Mike Rodriguez",
+            phone: "(555) 123-4567",
+            email: "mike@camerahouse.com",
+            dailyRate: 800,
+            weeklyRate: 4800,
+            availability: "available",
+            rating: 4.8,
+            notes: "Includes lens package deal",
+          },
+        ],
+        retailSources: [
+          {
+            id: "1",
+            retailer: "B&H Photo",
+            price: 5995,
+            url: "https://bhphotovideo.com/red-komodo",
+            inStock: true,
+            rating: 4.7,
+            shippingTime: "2-3 days",
+          },
+        ],
+        lastMaintenance: "2024-01-01",
+        nextMaintenance: "2024-04-01",
+        notes: "Excellent condition. Includes cage and monitor.",
+        departmentId: "camera",
       },
-      images: ["/placeholder.svg?height=300&width=400&text=ARRI+SkyPanel"],
-      rentalSources: [
-        {
-          id: "3",
-          company: "Lighting Warehouse",
-          contact: "Tom Wilson",
-          phone: "(555) 456-7890",
-          email: "tom@lightingwarehouse.com",
-          dailyRate: 120,
-          weeklyRate: 720,
-          availability: "available",
-          rating: 4.9,
-          notes: "Bulk discounts available",
+      {
+        id: "2",
+        name: "ARRI SkyPanel S60-C",
+        category: "lighting",
+        brand: "ARRI",
+        model: "SkyPanel S60-C",
+        serialNumber: "SKY567890",
+        status: "available",
+        condition: "good",
+        dailyRate: 125,
+        replacementValue: 3200,
+        location: "Lighting Warehouse",
+        description: "LED softlight with full color spectrum control",
+        specifications: {
+          Power: "400W",
+          "Color Temperature": "2800K - 10000K",
+          CRI: ">95",
+          Control: "DMX, Art-Net, sACN",
+          "Beam Angle": "115°",
         },
-      ],
-      retailSources: [
-        {
-          id: "3",
-          retailer: "ARRI Direct",
-          price: 3195,
-          url: "https://arri.com/skypanel-s60c",
-          inStock: true,
-          rating: 5.0,
-          shippingTime: "1-2 days",
+        images: ["/placeholder.svg?height=300&width=400&text=ARRI+SkyPanel"],
+        rentalSources: [
+          {
+            id: "3",
+            company: "Lighting Warehouse",
+            contact: "Tom Wilson",
+            phone: "(555) 456-7890",
+            email: "tom@lightingwarehouse.com",
+            dailyRate: 120,
+            weeklyRate: 720,
+            availability: "available",
+            rating: 4.9,
+            notes: "Bulk discounts available",
+          },
+        ],
+        retailSources: [
+          {
+            id: "3",
+            retailer: "ARRI Direct",
+            price: 3195,
+            url: "https://arri.com/skypanel-s60c",
+            inStock: true,
+            rating: 5.0,
+            shippingTime: "1-2 days",
+          },
+        ],
+        notes: "Recently serviced. Includes barn doors and diffusion.",
+        departmentId: "lighting",
+      },
+      {
+        id: "3",
+        name: "Sound Devices 833",
+        category: "audio",
+        brand: "Sound Devices",
+        model: "833",
+        serialNumber: "SD833001",
+        status: "available",
+        condition: "excellent",
+        dailyRate: 95,
+        replacementValue: 4200,
+        location: "Sound Cart - Unit B",
+        description: "8-input/12-track portable mixer and recorder",
+        specifications: {
+          Inputs: "8 mic/line inputs",
+          Tracks: "12-track recording",
+          "Sample Rate": "Up to 192kHz",
+          "Bit Depth": "32-bit float",
+          Timecode: "Built-in generator/reader",
         },
-      ],
-      notes: "Recently serviced. Includes barn doors and diffusion.",
-      departmentId: "lighting",
-    },
-    {
-      id: "3",
-      name: "Sound Devices 833",
-      category: "audio",
-      brand: "Sound Devices",
-      model: "833",
-      serialNumber: "SD833001",
-      status: "available",
-      condition: "excellent",
-      dailyRate: 95,
-      replacementValue: 4200,
-      location: "Sound Cart - Unit B",
-      description: "8-input/12-track portable mixer and recorder",
-      specifications: {
-        Inputs: "8 mic/line inputs",
-        Tracks: "12-track recording",
-        "Sample Rate": "Up to 192kHz",
-        "Bit Depth": "32-bit float",
-        Timecode: "Built-in generator/reader",
+        images: ["/placeholder.svg?height=300&width=400&text=Sound+Devices+833"],
+        rentalSources: [
+          {
+            id: "4",
+            company: "Audio Specialists",
+            contact: "Emma Davis",
+            phone: "(555) 234-5678",
+            email: "emma@audiospec.com",
+            dailyRate: 90,
+            weeklyRate: 540,
+            availability: "available",
+            rating: 4.7,
+            notes: "Includes wireless package",
+          },
+        ],
+        retailSources: [
+          {
+            id: "4",
+            retailer: "Sound Devices Store",
+            price: 4199,
+            url: "https://sounddevices.com/833",
+            inStock: true,
+            rating: 4.9,
+            shippingTime: "Next day",
+          },
+        ],
+        notes: "Perfect working condition. Includes carrying case.",
+        departmentId: "audio",
       },
-      images: ["/placeholder.svg?height=300&width=400&text=Sound+Devices+833"],
-      rentalSources: [
-        {
-          id: "4",
-          company: "Audio Specialists",
-          contact: "Emma Davis",
-          phone: "(555) 234-5678",
-          email: "emma@audiospec.com",
-          dailyRate: 90,
-          weeklyRate: 540,
-          availability: "available",
-          rating: 4.7,
-          notes: "Includes wireless package",
+      // Additional gear items for other departments
+      {
+        id: "4",
+        name: "Canon CN-E 24-70mm T2.95",
+        category: "camera",
+        brand: "Canon",
+        model: "CN-E 24-70mm T2.95",
+        serialNumber: "CNE24701",
+        status: "available",
+        condition: "excellent",
+        dailyRate: 100,
+        replacementValue: 8000,
+        location: "Camera Dept Storage",
+        description: "Professional cinema zoom lens",
+        specifications: {
+          "Focal Length": "24-70mm",
+          "Max Aperture": "T2.95",
+          Mount: "EF Mount",
+          "Focus Ring": "300° rotation",
         },
-      ],
-      retailSources: [
-        {
-          id: "4",
-          retailer: "Sound Devices Store",
-          price: 4199,
-          url: "https://sounddevices.com/833",
-          inStock: true,
-          rating: 4.9,
-          shippingTime: "Next day",
+        images: ["/placeholder.svg?height=300&width=400&text=Canon+Lens"],
+        rentalSources: [],
+        retailSources: [],
+        notes: "Excellent for handheld work.",
+        departmentId: "camera",
+      },
+      {
+        id: "5",
+        name: "Aputure 300d Mark II",
+        category: "lighting",
+        brand: "Aputure",
+        model: "300d Mark II",
+        serialNumber: "APT300D02",
+        status: "checked-out",
+        condition: "good",
+        dailyRate: 100,
+        replacementValue: 1200,
+        location: "Set B",
+        checkedOutTo: "Lisa Park",
+        description: "Powerful LED light with Bowens mount",
+        specifications: {
+          Power: "300W",
+          "Color Temperature": "5500K",
+          CRI: "96+",
+          Mount: "Bowens",
         },
-      ],
-      notes: "Perfect working condition. Includes carrying case.",
-      departmentId: "audio",
-    },
-    // Additional gear items for other departments
-    {
-      id: "4",
-      name: "Canon CN-E 24-70mm T2.95",
-      category: "camera",
-      brand: "Canon",
-      model: "CN-E 24-70mm T2.95",
-      serialNumber: "CNE24701",
-      status: "available",
-      condition: "excellent",
-      dailyRate: 100,
-      replacementValue: 8000,
-      location: "Camera Dept Storage",
-      description: "Professional cinema zoom lens",
-      specifications: {
-        "Focal Length": "24-70mm",
-        "Max Aperture": "T2.95",
-        Mount: "EF Mount",
-        "Focus Ring": "300° rotation",
+        images: ["/placeholder.svg?height=300&width=400&text=Aputure+300d"],
+        rentalSources: [],
+        retailSources: [],
+        notes: "Includes softbox and barn doors.",
+        departmentId: "lighting",
       },
-      images: ["/placeholder.svg?height=300&width=400&text=Canon+Lens"],
-      rentalSources: [],
-      retailSources: [],
-      notes: "Excellent for handheld work.",
-      departmentId: "camera",
-    },
-    {
-      id: "5",
-      name: "Aputure 300d Mark II",
-      category: "lighting",
-      brand: "Aputure",
-      model: "300d Mark II",
-      serialNumber: "APT300D02",
-      status: "checked-out",
-      condition: "good",
-      dailyRate: 100,
-      replacementValue: 1200,
-      location: "Set B",
-      checkedOutTo: "Lisa Park",
-      description: "Powerful LED light with Bowens mount",
-      specifications: {
-        Power: "300W",
-        "Color Temperature": "5500K",
-        CRI: "96+",
-        Mount: "Bowens",
+      {
+        id: "6",
+        name: "Sennheiser G4 Wireless Kit",
+        category: "audio",
+        brand: "Sennheiser",
+        model: "EW 112P G4",
+        serialNumber: "SEN112G401",
+        status: "available",
+        condition: "excellent",
+        dailyRate: 75,
+        replacementValue: 600,
+        location: "Audio Storage",
+        description: "Professional wireless microphone system",
+        specifications: {
+          Frequency: "A1: 470-516 MHz",
+          Range: "Up to 100m",
+          "Battery Life": "8 hours",
+          Channels: "1680 tunable frequencies",
+        },
+        images: ["/placeholder.svg?height=300&width=400&text=Sennheiser+G4"],
+        rentalSources: [],
+        retailSources: [],
+        notes: "Fresh batteries included.",
+        departmentId: "audio",
       },
-      images: ["/placeholder.svg?height=300&width=400&text=Aputure+300d"],
-      rentalSources: [],
-      retailSources: [],
-      notes: "Includes softbox and barn doors.",
-      departmentId: "lighting",
-    },
-    {
-      id: "6",
-      name: "Sennheiser G4 Wireless Kit",
-      category: "audio",
-      brand: "Sennheiser",
-      model: "EW 112P G4",
-      serialNumber: "SEN112G401",
-      status: "available",
-      condition: "excellent",
-      dailyRate: 75,
-      replacementValue: 600,
-      location: "Audio Storage",
-      description: "Professional wireless microphone system",
-      specifications: {
-        Frequency: "A1: 470-516 MHz",
-        Range: "Up to 100m",
-        "Battery Life": "8 hours",
-        Channels: "1680 tunable frequencies",
-      },
-      images: ["/placeholder.svg?height=300&width=400&text=Sennheiser+G4"],
-      rentalSources: [],
-      retailSources: [],
-      notes: "Fresh batteries included.",
-      departmentId: "audio",
-    },
-  ]
+    ]
+
+    if (projectId === "2") {
+      initialGear[0].status = "available"; // Komodo available in project 2
+      initialGear.push({
+        id: "7",
+        name: "GoPro Hero 11",
+        category: "camera",
+        brand: "GoPro",
+        model: "Hero 11",
+        serialNumber: "GP11001",
+        status: "available",
+        condition: "good",
+        dailyRate: 50,
+        replacementValue: 400,
+        location: "Camera Bag 1",
+        description: "Action camera",
+        specifications: {},
+        images: [],
+        rentalSources: [],
+        retailSources: [],
+        notes: "",
+        departmentId: "camera"
+      });
+    } else if (projectId === "3") {
+      initialGear.pop(); // Remove Sennheiser
+      initialGear[0].checkedOutTo = "Director";
+    }
+
+    MOCK_GEAR_STORE[projectId || "1"] = initialGear
+    setGearItems(initialGear)
+  }, [projectId])
+
+  useEffect(() => {
+    if (gearItems.length > 0 && projectId) {
+      MOCK_GEAR_STORE[projectId] = gearItems
+    }
+  }, [gearItems, projectId])
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -615,9 +673,9 @@ export default function GearManagement({
   const filteredItems = gearItems.filter((item) => {
     const matchesSearch = searchQuery
       ? item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase())
+      item.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase())
       : true
 
     const matchesCategory = filters.category === "all" || item.category === filters.category
@@ -944,25 +1002,22 @@ export default function GearManagement({
           <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1 border border-white/20">
             <button
               onClick={() => setViewMode("departments")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "departments" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "departments" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <Building className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <Grid3X3 className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <List className="h-4 w-4" />
             </button>
@@ -981,15 +1036,14 @@ export default function GearManagement({
 
       {viewMode === "grid" && (
         <div
-          className={`grid gap-4 ${
-            gridColumns === 2
-              ? "grid-cols-1 md:grid-cols-2"
-              : gridColumns === 3
-                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                : gridColumns === 4
-                  ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                  : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
-          }`}
+          className={`grid gap-4 ${gridColumns === 2
+            ? "grid-cols-1 md:grid-cols-2"
+            : gridColumns === 3
+              ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+              : gridColumns === 4
+                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+            }`}
         >
           {filteredItems.map((item) => (
             <GearCard key={item.id} item={item} />

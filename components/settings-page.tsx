@@ -19,6 +19,7 @@ import {
   Moon,
   Type,
   Plug,
+  Archive,
 } from "lucide-react"
 
 interface KeyboardShortcut {
@@ -56,6 +57,9 @@ interface SettingsPageProps {
   currentProject: any
   setCurrentProject: (project: any) => void
   projects: any[]
+  onAddProject?: (project: any) => void
+  onUpdateProject?: (project: any) => void
+  onDeleteProject?: (projectId: string) => void
 }
 
 export default function SettingsPage({
@@ -64,10 +68,58 @@ export default function SettingsPage({
   currentProject,
   setCurrentProject,
   projects,
+  onAddProject,
+  onUpdateProject,
+  onDeleteProject,
 }: SettingsPageProps) {
   const [activeTab, setActiveTab] = useState<
     "general" | "keyboard" | "appearance" | "projects" | "account" | "integrations"
   >("general")
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
+  const [newProjectTitle, setNewProjectTitle] = useState("")
+  const [newProjectGenre, setNewProjectGenre] = useState("")
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
+  const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null)
+
+  const handleAddNewProject = () => {
+    if (!newProjectTitle || !onAddProject) return
+
+    const newProject = {
+      id: Date.now().toString(),
+      title: newProjectTitle,
+      status: "development",
+      progress: 0,
+      budget: 0,
+      budgetUsed: 0,
+      daysRemaining: 0,
+      totalDays: 0,
+      director: "Pending",
+      producer: "Pending",
+      genre: newProjectGenre || "Untitled",
+      format: "Feature Film",
+      lastActivity: "Just now",
+      thumbnail: "/placeholder.svg?height=200&width=300",
+      priority: "medium",
+      aiInsights: [],
+      team: [],
+      calendars: [],
+      contacts: [],
+      backgroundImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+      backgroundType: "image",
+    }
+
+    onAddProject(newProject)
+    setIsCreatingProject(false)
+    setNewProjectTitle("")
+    setNewProjectGenre("")
+  }
+
+  const handleUpdateExistingProject = (project: any, updates: any) => {
+    if (onUpdateProject) {
+      onUpdateProject({ ...project, ...updates })
+    }
+    setEditingProjectId(null)
+  }
   const [searchQuery, setSearchQuery] = useState("")
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null)
   const [recordingKeys, setRecordingKeys] = useState<string[]>([])
@@ -1083,11 +1135,10 @@ export default function SettingsPage({
             <button
               key={theme.id}
               onClick={() => setThemeMode(theme.id as any)}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                themeMode === theme.id
-                  ? "border-blue-400 bg-blue-500/20"
-                  : "border-white/20 bg-white/5 hover:bg-white/10"
-              }`}
+              className={`p-4 rounded-lg border-2 transition-all ${themeMode === theme.id
+                ? "border-blue-400 bg-blue-500/20"
+                : "border-white/20 bg-white/5 hover:bg-white/10"
+                }`}
             >
               <theme.icon className="h-6 w-6 text-white mx-auto mb-2" />
               <span className="text-white text-sm font-medium">{theme.label}</span>
@@ -1109,11 +1160,10 @@ export default function SettingsPage({
               <button
                 key={font.id}
                 onClick={() => setSelectedFont(font.id)}
-                className={`p-3 rounded-lg border transition-all text-left ${
-                  selectedFont === font.id
-                    ? "border-blue-400 bg-blue-500/20"
-                    : "border-white/20 bg-white/5 hover:bg-white/10"
-                }`}
+                className={`p-3 rounded-lg border transition-all text-left ${selectedFont === font.id
+                  ? "border-blue-400 bg-blue-500/20"
+                  : "border-white/20 bg-white/5 hover:bg-white/10"
+                  }`}
                 style={{ fontFamily: font.family }}
               >
                 <div className="text-white font-medium">{font.name}</div>
@@ -1132,17 +1182,15 @@ export default function SettingsPage({
           <div className="flex gap-2 p-1 bg-white/10 rounded-lg">
             <button
               onClick={() => setBackgroundScope("global")}
-              className={`flex-1 py-2 px-4 rounded-md transition-colors ${
-                backgroundScope === "global" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md transition-colors ${backgroundScope === "global" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               Global
             </button>
             <button
               onClick={() => setBackgroundScope("project")}
-              className={`flex-1 py-2 px-4 rounded-md transition-colors ${
-                backgroundScope === "project" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md transition-colors ${backgroundScope === "project" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               Current Project
             </button>
@@ -1158,9 +1206,8 @@ export default function SettingsPage({
           {backgroundOptions.map((bg) => (
             <div
               key={bg.id}
-              className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
-                selectedBackground === bg.id ? "border-blue-400" : "border-white/20 hover:border-white/40"
-              }`}
+              className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${selectedBackground === bg.id ? "border-blue-400" : "border-white/20 hover:border-white/40"
+                }`}
               onClick={() => setSelectedBackground(bg.id)}
             >
               <div className="aspect-video relative">
@@ -1269,73 +1316,144 @@ export default function SettingsPage({
 
   const renderProjectSettings = () => (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Project Management</h3>
-        <div className="space-y-4">
-          <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-            <h4 className="text-white font-medium mb-2">Default Project Location</h4>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-white">Project Management</h3>
+        <button
+          onClick={() => setIsCreatingProject(true)}
+          className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          <Folder className="h-4 w-4" />
+          Create New Project
+        </button>
+      </div>
+
+      {isCreatingProject && (
+        <div className="p-4 bg-white/5 rounded-lg border border-white/10 space-y-4">
+          <h4 className="text-white font-medium">New Project Details</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Project Title"
+              value={newProjectTitle}
+              onChange={(e) => setNewProjectTitle(e.target.value)}
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+            />
+            <input
+              type="text"
+              placeholder="Genre"
+              value={newProjectGenre}
+              onChange={(e) => setNewProjectGenre(e.target.value)}
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setIsCreatingProject(false)}
+              className="px-4 py-2 text-white/70 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAddNewProject}
+              disabled={!newProjectTitle}
+              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg disabled:opacity-50"
+            >
+              Create Project
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {projects.map((project) => (
+          <div key={project.id} className="p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                  {project.title.charAt(0)}
+                </div>
+                <div>
+                  {editingProjectId === project.id ? (
+                    <input
+                      type="text"
+                      defaultValue={project.title}
+                      onBlur={(e) => handleUpdateExistingProject(project, { title: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleUpdateExistingProject(project, { title: e.currentTarget.value })
+                      }}
+                      autoFocus
+                      className="bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-sm"
+                    />
+                  ) : (
+                    <h4 className="text-white font-medium">{project.title}</h4>
+                  )}
+                  <p className="text-white/70 text-sm">{project.status} • {project.genre}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentProject(project)}
+                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg"
+                  title="Switch to this project"
+                >
+                  <Check className={`h-4 w-4 ${currentProject.id === project.id ? 'text-green-400' : ''}`} />
+                </button>
+                <button
+                  onClick={() => setEditingProjectId(project.id)}
+                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg"
+                  title="Rename"
+                >
+                  <Type className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleUpdateExistingProject(project, { status: project.status === 'archived' ? 'development' : 'archived' })}
+                  className={`p-2 rounded-lg ${project.status === 'archived' ? 'text-yellow-400 bg-yellow-400/10' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+                  title={project.status === 'archived' ? "Unarchive" : "Archive"}
+                >
+                  <Archive className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmationId(project.id)}
+                  className="p-2 text-white/70 hover:text-red-400 hover:bg-red-500/10 rounded-lg"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {deleteConfirmationId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="text-white font-semibold mb-2">Delete Project?</h3>
+            <p className="text-white/70 text-sm mb-4">
+              Are you sure you want to delete this project? This action cannot be undone.
+            </p>
             <div className="flex gap-2">
-              <input
-                type="text"
-                defaultValue="/Users/studio/Projects"
-                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
-              />
-              <button className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
-                Browse
+              <button
+                onClick={() => setDeleteConfirmationId(null)}
+                className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (onDeleteProject && deleteConfirmationId) {
+                    onDeleteProject(deleteConfirmationId)
+                    setDeleteConfirmationId(null)
+                  }
+                }}
+                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+              >
+                Delete
               </button>
             </div>
           </div>
-
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
-            <div>
-              <h4 className="text-white font-medium">Auto-backup Projects</h4>
-              <p className="text-white/70 text-sm">Create automatic backups every hour</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-            </label>
-          </div>
-
-          <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-            <h4 className="text-white font-medium mb-2">Backup Retention</h4>
-            <select className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white">
-              <option value="7">7 days</option>
-              <option value="30">30 days</option>
-              <option value="90">90 days</option>
-              <option value="365">1 year</option>
-              <option value="forever">Forever</option>
-            </select>
-          </div>
         </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Export Settings</h3>
-        <div className="space-y-4">
-          <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-            <h4 className="text-white font-medium mb-2">Default Export Format</h4>
-            <select className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white">
-              <option value="pdf">PDF</option>
-              <option value="docx">Word Document</option>
-              <option value="xlsx">Excel Spreadsheet</option>
-              <option value="json">JSON</option>
-              <option value="xml">XML</option>
-            </select>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
-            <div>
-              <h4 className="text-white font-medium">Include Metadata</h4>
-              <p className="text-white/70 text-sm">Add creation date, author, and version info to exports</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-            </label>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   )
 
@@ -1602,9 +1720,8 @@ export default function SettingsPage({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  activeTab === tab.id ? "bg-white/20 text-white" : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === tab.id ? "bg-white/20 text-white" : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}
               >
                 <tab.icon className="h-4 w-4" />
                 {tab.label}

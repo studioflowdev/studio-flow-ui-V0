@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   FileText,
   Plus,
@@ -70,7 +70,9 @@ interface AIInsight {
   action?: string
 }
 
-export default function LegalDocuments({ searchQuery = "" }: { searchQuery?: string }) {
+const MOCK_DOCS_STORE: Record<string, LegalDocument[]> = {}
+
+export default function LegalDocuments({ searchQuery = "", projectId = "1" }: { searchQuery?: string; projectId?: string }) {
   const [activeTab, setActiveTab] = useState<"production" | "post-production">("production")
   const [viewMode, setViewMode] = useState<"list" | "grid" | "templates">("grid")
   const [gridSize, setGridSize] = useState(3)
@@ -82,98 +84,124 @@ export default function LegalDocuments({ searchQuery = "" }: { searchQuery?: str
   const [expandedGuidance, setExpandedGuidance] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(true)
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
+  const [documents, setDocuments] = useState<LegalDocument[]>([])
 
   // Sample documents data
-  const documents: LegalDocument[] = [
-    {
-      id: "1",
-      title: "Location Agreement - Central Park",
-      type: "Location Agreement",
-      category: "production",
-      status: "signed",
-      priority: "high",
-      dueDate: "2024-01-15",
-      signedDate: "2024-01-10",
-      expiryDate: "2024-06-15",
-      parties: ["NYC Parks Department", "Midnight Productions"],
-      amount: 15000,
-      description: "Filming permit and location agreement for Central Park scenes",
-      tags: ["location", "permit", "nyc"],
-      attachments: ["central-park-agreement.pdf", "insurance-cert.pdf"],
-      lastModified: "2 hours ago",
-      assignedTo: "Location Manager",
-      progress: 100,
-    },
-    {
-      id: "2",
-      title: "Actor Contract - Sarah Chen",
-      type: "Talent Agreement",
-      category: "production",
-      status: "pending",
-      priority: "high",
-      dueDate: "2024-01-20",
-      parties: ["Sarah Chen", "Midnight Productions"],
-      amount: 250000,
-      description: "Lead actor contract with performance clauses",
-      tags: ["talent", "lead", "contract"],
-      attachments: ["sarah-chen-contract-draft.pdf"],
-      lastModified: "1 day ago",
-      assignedTo: "Producer",
-      progress: 75,
-    },
-    {
-      id: "3",
-      title: "Equipment Rental - RED Camera Package",
-      type: "Equipment Rental",
-      category: "production",
-      status: "signed",
-      priority: "medium",
-      dueDate: "2024-01-25",
-      signedDate: "2024-01-12",
-      parties: ["Camera House Rentals", "Midnight Productions"],
-      amount: 45000,
-      description: "RED camera package rental for 6-week shoot",
-      tags: ["equipment", "camera", "rental"],
-      attachments: ["red-camera-rental.pdf"],
-      lastModified: "3 days ago",
-      assignedTo: "DP",
-      progress: 100,
-    },
-    {
-      id: "4",
-      title: "Music Licensing - Score Rights",
-      type: "Music License",
-      category: "post-production",
-      status: "draft",
-      priority: "medium",
-      dueDate: "2024-03-01",
-      parties: ["Composer John Smith", "Midnight Productions"],
-      amount: 75000,
-      description: "Original score composition and licensing agreement",
-      tags: ["music", "score", "licensing"],
-      attachments: [],
-      lastModified: "5 hours ago",
-      assignedTo: "Music Supervisor",
-      progress: 30,
-    },
-    {
-      id: "5",
-      title: "VFX Services Agreement",
-      type: "Service Agreement",
-      category: "post-production",
-      status: "pending",
-      priority: "high",
-      dueDate: "2024-02-15",
-      parties: ["Digital Dreams VFX", "Midnight Productions"],
-      amount: 180000,
-      description: "Visual effects services for 45 shots",
-      tags: ["vfx", "services", "post"],
-      attachments: ["vfx-proposal.pdf", "shot-breakdown.xlsx"],
-      lastModified: "1 hour ago",
-      assignedTo: "VFX Producer",
-      progress: 60,
-    },
-  ]
+  useEffect(() => {
+    if (MOCK_DOCS_STORE[projectId]) {
+      setDocuments(MOCK_DOCS_STORE[projectId])
+      return
+    }
+
+    const initialDocuments: LegalDocument[] = [
+      {
+        id: "1",
+        title: "Location Agreement - Central Park",
+        type: "Location Agreement",
+        category: "production",
+        status: "signed",
+        priority: "high",
+        dueDate: "2024-01-15",
+        signedDate: "2024-01-10",
+        expiryDate: "2024-06-15",
+        parties: ["NYC Parks Department", "Midnight Productions"],
+        amount: 15000,
+        description: "Filming permit and location agreement for Central Park scenes",
+        tags: ["location", "permit", "nyc"],
+        attachments: ["central-park-agreement.pdf", "insurance-cert.pdf"],
+        lastModified: "2 hours ago",
+        assignedTo: "Location Manager",
+        progress: 100,
+      },
+      {
+        id: "2",
+        title: "Actor Contract - Sarah Chen",
+        type: "Talent Agreement",
+        category: "production",
+        status: "pending",
+        priority: "high",
+        dueDate: "2024-01-20",
+        parties: ["Sarah Chen", "Midnight Productions"],
+        amount: 250000,
+        description: "Lead actor contract with performance clauses",
+        tags: ["talent", "lead", "contract"],
+        attachments: ["sarah-chen-contract-draft.pdf"],
+        lastModified: "1 day ago",
+        assignedTo: "Producer",
+        progress: 75,
+      },
+      {
+        id: "3",
+        title: "Equipment Rental - RED Camera Package",
+        type: "Equipment Rental",
+        category: "production",
+        status: "signed",
+        priority: "medium",
+        dueDate: "2024-01-25",
+        signedDate: "2024-01-12",
+        parties: ["Camera House Rentals", "Midnight Productions"],
+        amount: 45000,
+        description: "RED camera package rental for 6-week shoot",
+        tags: ["equipment", "camera", "rental"],
+        attachments: ["red-camera-rental.pdf"],
+        lastModified: "3 days ago",
+        assignedTo: "DP",
+        progress: 100,
+      },
+      {
+        id: "4",
+        title: "Music Licensing - Score Rights",
+        type: "Music License",
+        category: "post-production",
+        status: "draft",
+        priority: "medium",
+        dueDate: "2024-03-01",
+        parties: ["Composer John Smith", "Midnight Productions"],
+        amount: 75000,
+        description: "Original score composition and licensing agreement",
+        tags: ["music", "score", "licensing"],
+        attachments: [],
+        lastModified: "5 hours ago",
+        assignedTo: "Music Supervisor",
+        progress: 30,
+      },
+      {
+        id: "5",
+        title: "VFX Services Agreement",
+        type: "Service Agreement",
+        category: "post-production",
+        status: "pending",
+        priority: "high",
+        dueDate: "2024-02-15",
+        parties: ["Digital Dreams VFX", "Midnight Productions"],
+        amount: 180000,
+        description: "Visual effects services for 45 shots",
+        tags: ["vfx", "services", "post"],
+        attachments: ["vfx-proposal.pdf", "shot-breakdown.xlsx"],
+        lastModified: "1 hour ago",
+        assignedTo: "VFX Producer",
+        progress: 60,
+      },
+    ]
+
+    if (projectId === "2") {
+      initialDocuments.shift();
+      initialDocuments[0].title = "Location Agreement - Time Square";
+      initialDocuments[0].amount = 50000;
+    } else if (projectId === "3") {
+      initialDocuments.pop();
+      initialDocuments[0].status = "draft";
+    }
+
+    MOCK_DOCS_STORE[projectId] = initialDocuments;
+    setDocuments(initialDocuments);
+  }, [projectId])
+
+  useEffect(() => {
+    if (documents.length > 0 && projectId) {
+      MOCK_DOCS_STORE[projectId] = documents;
+    }
+  }, [documents, projectId])
 
   // Document templates
   const documentTemplates: DocumentTemplate[] = [
@@ -349,9 +377,8 @@ export default function LegalDocuments({ searchQuery = "" }: { searchQuery?: str
   const renderDocumentCard = (doc: LegalDocument, isExpanded: boolean) => (
     <div
       key={doc.id}
-      className={`bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 cursor-pointer ${
-        isExpanded ? "row-span-2" : ""
-      }`}
+      className={`bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 cursor-pointer ${isExpanded ? "row-span-2" : ""
+        }`}
       onClick={() => setSelectedDocument(doc)}
     >
       <div className="p-4">
@@ -572,19 +599,17 @@ export default function LegalDocuments({ searchQuery = "" }: { searchQuery?: str
       <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-lg p-1 border border-white/20 w-fit">
         <button
           onClick={() => setActiveTab("production")}
-          className={`px-6 py-3 rounded-md transition-all duration-200 ${
-            activeTab === "production" ? "bg-white/20 text-white" : "text-white/70 hover:text-white hover:bg-white/10"
-          }`}
+          className={`px-6 py-3 rounded-md transition-all duration-200 ${activeTab === "production" ? "bg-white/20 text-white" : "text-white/70 hover:text-white hover:bg-white/10"
+            }`}
         >
           Production
         </button>
         <button
           onClick={() => setActiveTab("post-production")}
-          className={`px-6 py-3 rounded-md transition-all duration-200 ${
-            activeTab === "post-production"
-              ? "bg-white/20 text-white"
-              : "text-white/70 hover:text-white hover:bg-white/10"
-          }`}
+          className={`px-6 py-3 rounded-md transition-all duration-200 ${activeTab === "post-production"
+            ? "bg-white/20 text-white"
+            : "text-white/70 hover:text-white hover:bg-white/10"
+            }`}
         >
           Post-Production
         </button>
@@ -614,25 +639,22 @@ export default function LegalDocuments({ searchQuery = "" }: { searchQuery?: str
           <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1 border border-white/20">
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <Grid3X3 className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "list" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <List className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("templates")}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === "templates" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-              }`}
+              className={`px-3 py-2 rounded-md transition-colors ${viewMode === "templates" ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                }`}
             >
               <Star className="h-4 w-4" />
             </button>
@@ -644,9 +666,8 @@ export default function LegalDocuments({ searchQuery = "" }: { searchQuery?: str
                 <button
                   key={size}
                   onClick={() => setGridSize(size)}
-                  className={`px-2 py-1 rounded text-xs transition-colors ${
-                    gridSize === size ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
-                  }`}
+                  className={`px-2 py-1 rounded text-xs transition-colors ${gridSize === size ? "bg-white/20 text-white" : "text-white/70 hover:text-white"
+                    }`}
                 >
                   {size}
                 </button>
