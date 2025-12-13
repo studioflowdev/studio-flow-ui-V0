@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
     Settings,
     Plus,
@@ -9,21 +9,15 @@ import {
     Archive,
     Trash2,
     Upload,
-    MoreVertical,
+    MoreVertical, // Keeping unused import to minimize diff noise if possible, or should I remove? strict linter might complain. I'll keep it as is from original if it was there.
     FileBox,
     RefreshCw,
     Search,
     Filter
 } from "lucide-react"
 import { useProjectActions } from "../../hooks/useProjectActions"
-
-interface Project {
-    id: string
-    title: string
-    status: string
-    lastActivity: string
-    size?: string
-}
+import { useLiveQuery } from "dexie-react-hooks"
+import { db, seedMockData, type Project } from "../../../lib/db"
 
 interface ProjectManagerProps {
     onNavigateToProject?: (projectId: string) => void
@@ -31,14 +25,36 @@ interface ProjectManagerProps {
 }
 
 export default function ProjectManager({ onNavigateToProject, onCreateProject }: ProjectManagerProps) {
-    const [projects, setProjects] = useState<Project[]>([
-        { id: "1", title: "Midnight Chronicles", status: "production", lastActivity: "2 min ago", size: "1.2 GB" },
-        { id: "2", title: "Urban Legends", status: "development", lastActivity: "2 days ago", size: "450 MB" },
-        { id: "3", title: "Neon Nights", status: "post-production", lastActivity: "1 week ago", size: "3.4 GB" },
-    ])
+    // Replace local state with live query from DB
+    const projects = useLiveQuery(() => db.projects.toArray()) || []
+
     const [searchQuery, setSearchQuery] = useState("")
 
     const { isExporting, exportProject, archiveProject, deleteProject } = useProjectActions()
+
+    const [showMockData, setShowMockData] = useState(true)
+
+    // Initial load and settings listener
+    useEffect(() => {
+        const loadSettings = () => {
+            const stored = localStorage.getItem("studio_flow_show_mock_data")
+            if (stored !== null) {
+                setShowMockData(JSON.parse(stored))
+            }
+        }
+
+        loadSettings()
+
+        // Seed data if empty and mock data is enabled (or just always check seed on load)
+        seedMockData()
+
+        const handleSettingsChange = () => {
+            loadSettings()
+        }
+
+        window.addEventListener("studio_flow_settings_change", handleSettingsChange)
+        return () => window.removeEventListener("studio_flow_settings_change", handleSettingsChange)
+    }, [])
 
     const handleExportProject = (project: Project) => {
         exportProject(project)
@@ -47,23 +63,108 @@ export default function ProjectManager({ onNavigateToProject, onCreateProject }:
     const handleArchiveProject = (id: string) => {
         const project = projects.find(p => p.id === id)
         if (project) {
-            archiveProject(project, (pid, newStatus) => {
-                setProjects(projects.map(p => p.id === pid ? { ...p, status: newStatus } : p))
+            // Update in DB instead of local state
+            // archiveProject hook currently takes a callback to update local state.
+            // We can wrap the DB update in that callback or just update DB directly.
+            // detailed `archiveProject` implementation showed it calls the callback.
+            archiveProject(project, async (pid, newStatus) => {
+                await db.projects.update(pid, { status: newStatus as any })
             })
         }
     }
 
-    const handleDeleteProject = (id: string) => {
-        const project = projects.find(p => p.id === id)
-        if (project) {
-            deleteProject(project, (pid) => {
-                setProjects(projects.filter(p => p.id !== pid))
-            })
+    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
+
+    // Replaced original handleDeleteProject to open modal instead of calling hook
+    const handleDeleteClick = (project: Project) => {
+        setProjectToDelete(project)
+    }
+
+    const confirmDeleteProject = async () => {
+        if (!projectToDelete) return
+
+        try {
+            const pid = projectToDelete.id
+
+            // Try deleting as authentic string ID first
+            const existsAsString = await db.projects.get(pid);
+            if (existsAsString) {
+                await db.projects.delete(pid);
+            } else {
+                // Fallback: check if it exists as a number
+                const asNumber = Number(pid);
+                if (!isNaN(asNumber)) {
+                    const existsAsNumber = await db.projects.get(asNumber as any);
+                    if (existsAsNumber) {
+                        await db.projects.delete(asNumber as any);
+                    }
+                }
+            }
+            // Close modal
+            setProjectToDelete(null)
+        } catch (error) {
+            console.error("[ProjectManager] Failed to delete project:", error);
+            alert("Failed to delete project. Check console for details.");
         }
     }
+
+    // Handle creating a new project (simple implementation for now)
+    const handleCreateProject = async () => {
+        // If prop is provided, call it (maybe it opens a modal)
+        if (onCreateProject) {
+            onCreateProject()
+            return;
+        }
+
+        // Fallback or "Create" action logic if we wanted to add it here directly
+        // For now we keep existing behavior which just called the prop
+    }
+    const filteredProjects = projects.filter(p => {
+        // Filter by mock data setting
+        if (!showMockData && p.isMock) return false
+
+        // Filter by search query
+        if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
+
+        return true
+    })
 
     return (
-        <div className="h-full flex flex-col text-white">
+        <div className="h-full flex flex-col text-white relative">
+            {/* Delete Confirmation Modal */}
+            {projectToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-[#1e293b] border border-white/10 rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center gap-4 mb-4 text-red-400">
+                            <div className="p-3 bg-red-500/10 rounded-full">
+                                <Trash2 className="h-6 w-6" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white">Delete Project?</h3>
+                        </div>
+
+                        <p className="text-white/70 mb-6">
+                            Are you sure you want to delete <span className="font-semibold text-white">"{projectToDelete.title}"</span>?
+                            This action cannot be undone and all associated data will be permanently removed.
+                        </p>
+
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setProjectToDelete(null)}
+                                className="px-4 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteProject}
+                                className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition-colors shadow-lg shadow-red-500/20"
+                            >
+                                Delete Project
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="mb-6 flex items-center justify-between">
                 <div>
                     <h2 className="text-xl font-bold mb-1">Project Management</h2>
@@ -82,7 +183,7 @@ export default function ProjectManager({ onNavigateToProject, onCreateProject }:
                     </div>
                     <button
                         className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm shadow-lg hover:shadow-blue-500/25"
-                        onClick={() => onCreateProject?.()}
+                        onClick={handleCreateProject}
                     >
                         <Plus className="h-4 w-4" />
                         New Project
@@ -106,7 +207,7 @@ export default function ProjectManager({ onNavigateToProject, onCreateProject }:
                         </tr>
                     </thead>
                     <tbody>
-                        {projects.filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase())).map((project) => (
+                        {filteredProjects.map((project) => (
                             <tr key={project.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                                 <td className="p-4">
                                     <div className="flex items-center gap-3">
@@ -114,7 +215,10 @@ export default function ProjectManager({ onNavigateToProject, onCreateProject }:
                                             <FileBox className="h-5 w-5 text-blue-400" />
                                         </div>
                                         <div>
-                                            <div className="font-medium text-white">{project.title}</div>
+                                            <div className="font-medium text-white">
+                                                {project.title}
+                                                {project.isMock && <span className="ml-2 text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">MOCK</span>}
+                                            </div>
                                             <div className="text-xs text-white/50">ID: {project.id}</div>
                                         </div>
                                     </div>
@@ -159,7 +263,10 @@ export default function ProjectManager({ onNavigateToProject, onCreateProject }:
                                             <Archive className="h-4 w-4" />
                                         </button>
                                         <button
-                                            onClick={() => handleDeleteProject(project.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleDeleteClick(project)
+                                            }}
                                             className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-red-400 transition-colors"
                                             title="Delete Project"
                                         >

@@ -72,38 +72,12 @@ import GlobalSettings from "../components/globalmodules/Settings/global-settings
 import ProjectSettings from "../components/projectmodules/Settings/project-settings"
 import AssetManagement from "../components/projectmodules/Assets/asset-management"
 import { useProjectActions } from "../components/hooks/useProjectActions"
+import { useLiveQuery } from "dexie-react-hooks"
+import { db, seedMockData, type Project } from "../lib/db"
 
 // Types for production data
-interface Project {
-  id: string
-  title: string
-  type?: string
-  status: "development" | "pre-production" | "production" | "post-production" | "completed" | "archived"
-  progress?: number
-  budget?: number
-  budgetUsed?: number
-  daysRemaining?: number
-  totalDays?: number
-  director?: string
-  producer?: string
-  genre?: string
-  format?: string
-  lastActivity?: string
-  thumbnail?: string
-  priority?: "high" | "medium" | "low"
-  aiInsights?: string[]
-  team?: { id?: string; name: string; role: string; avatar: string }[]
-  calendars?: string[]
-  contacts?: string[]
-  backgroundImage?: string
-  backgroundType?: "image" | "gradient" | "color"
-  backgroundColor?: string
-  startDate?: string
-  endDate?: string
-  tasks?: { total: number; completed: number; pending: number; blocked: number }
-  nextMilestone?: string
-  description?: string
-}
+// Types are now imported from lib/db
+
 
 interface ProductionModule {
   id: string
@@ -166,6 +140,14 @@ export default function StudioFlowDashboard() {
   const [activeGenerations, setActiveGenerations] = useState<any[]>([])
   const [generationHistory, setGenerationHistory] = useState<any[]>([])
   const [showAIGenerationPanel, setShowAIGenerationPanel] = useState(false)
+
+  // Sample project data replaced with live query
+  const projects = useLiveQuery(() => db.projects.toArray()) || []
+
+  useEffect(() => {
+    seedMockData()
+  }, [])
+
 
   // Define all module filter configurations
   const moduleFilterConfigs: ModuleFilters = {
@@ -410,9 +392,10 @@ export default function StudioFlowDashboard() {
 
   useEffect(() => {
     setIsLoaded(true)
-    setCurrentProject(projects[0])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (projects && projects.length > 0 && !currentProject) {
+      setCurrentProject(projects[0])
+    }
+  }, [projects, currentProject])
 
   useEffect(() => {
     localStorage.setItem("aiAssistantPosition", JSON.stringify({ x: 0, y: 0 }))
@@ -639,96 +622,30 @@ export default function StudioFlowDashboard() {
   }
 
   // Project management handlers
-  const handleAddProject = (newProject: Project) => {
-    setProjects((prev) => [...prev, newProject])
+  const handleAddProject = async (newProject: Project) => {
+    await db.projects.add(newProject)
     setCurrentProject(newProject)
   }
 
-  const handleUpdateProject = (updatedProject: Project) => {
-    setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)))
+  const handleUpdateProject = async (updatedProject: Project) => {
+    await db.projects.put(updatedProject)
     if (currentProject?.id === updatedProject.id) {
       setCurrentProject(updatedProject)
     }
   }
 
-  const handleDeleteProject = (projectId: string) => {
-    const updatedProjects = projects.filter((p) => p.id !== projectId)
-    setProjects(updatedProjects)
+  const handleDeleteProject = async (projectId: string) => {
+    await db.projects.delete(projectId)
     if (currentProject?.id === projectId) {
-      setCurrentProject(updatedProjects[0] || null)
+      const nextProject = projects.find((p) => p.id !== projectId)
+      setCurrentProject(nextProject || null)
     }
   }
 
+
+
   // Sample project data
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: "1",
-      title: "Midnight Chronicles",
-      status: "production",
-      priority: "high",
-      progress: 65,
-      startDate: "2024-03-01",
-      endDate: "2024-08-15",
-      budget: 15000000,
-      budgetUsed: 8400000,
-      team: [
-        { id: "1", name: "Sarah J.", role: "Director", avatar: "SJ" },
-        { id: "2", name: "Mike R.", role: "Producer", avatar: "MR" },
-        { id: "3", name: "Elena K.", role: "DoP", avatar: "EK" },
-        { id: "4", name: "David L.", role: "Editor", avatar: "DL" },
-      ],
-      tasks: { total: 145, completed: 82, pending: 63, blocked: 4 },
-      nextMilestone: "Principal Photography Wrap",
-      daysRemaining: 42,
-      totalDays: 120,
-      lastActivity: "2 hours ago",
-      thumbnail: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop",
-      description: "A cyberpunk noir thriller set in 2089 Tokyo.",
-      backgroundType: "image", // "image" | "gradient" | "color"
-      backgroundImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-      backgroundColor: "",
-      calendars: ["cal_1", "cal_2"], // IDs of calendars associated with this project
-    },
-    {
-      id: "2",
-      title: "Urban Legends",
-      type: "Series",
-      genre: "Horror Anthology",
-      format: "Limited Series",
-      status: "development",
-      priority: "medium",
-      progress: 25,
-      startDate: "2024-06-01",
-      endDate: "2024-12-20",
-      budget: 8000000,
-      budgetUsed: 450000,
-      team: [
-        { id: "5", name: "Chris P.", role: "Showrunner", avatar: "CP" },
-        { id: "6", name: "Anna M.", role: "Writer", avatar: "AM" },
-      ],
-      tasks: { total: 85, completed: 20, pending: 60, blocked: 5 },
-      nextMilestone: "Script Lockdown",
-      daysRemaining: 180,
-      totalDays: 200,
-      lastActivity: "1 day ago",
-      thumbnail: "https://images.unsplash.com/photo-1509347528160-9a9e33742cd4?q=80&w=800&auto=format&fit=crop",
-      description: "An anthology series exploring modern urban myths.",
-      backgroundType: "gradient",
-      backgroundImage: "",
-      backgroundColor: "linear-gradient(to right, #243B55, #141E30)",
-      calendars: [],
-    },
-    {
-      id: "3",
-      title: "Neon Nights",
-      type: "Commercial",
-      genre: "Tech Commercial",
-      format: "30s Spot",
-      status: "post-production",
-      backgroundType: "color",
-      backgroundColor: "#f59e0b",
-    },
-  ])
+
 
   // Production modules for sidebar - Updated to include budget module
   const productionModules: ProductionModule[] = [
@@ -1301,9 +1218,10 @@ export default function StudioFlowDashboard() {
   )
 
   // Project Creation Logic
-  const createNewProject = () => {
+  // Project Creation Logic
+  const createNewProject = async () => {
     const newProject: Project = {
-      id: (projects.length + 1).toString(),
+      id: Date.now().toString(),
       title: "New Untitled Project",
       status: "development",
       type: "Film",
@@ -1323,7 +1241,7 @@ export default function StudioFlowDashboard() {
       endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     }
 
-    setProjects([newProject, ...projects])
+    await db.projects.add(newProject)
     // Optionally navigate to settings immediately
     setSelectedProject(newProject)
     setCurrentProject(newProject)
@@ -1369,7 +1287,7 @@ export default function StudioFlowDashboard() {
           </button>
           <div className="flex items-center gap-3">
             <Film className="h-8 w-8 text-blue-400" />
-            <span className="text-2xl font-bold text-white drop-shadow-lg">StudioFlow v2</span>
+            <span className="text-2xl font-bold text-white drop-shadow-lg">StudioFlow v3</span>
           </div>
         </div>
 
@@ -2015,10 +1933,10 @@ export default function StudioFlowDashboard() {
               ) : currentView === "project-settings" ? (
                 <ProjectSettings
                   currentProject={currentProject}
-                  onUpdateProject={(project, updates) => {
+                  onUpdateProject={async (project, updates) => {
                     const updated = { ...project, ...updates }
                     setCurrentProject(updated)
-                    setProjects(projects.map(p => p.id === updated.id ? updated : p))
+                    await db.projects.put(updated)
                   }}
                 />
               ) : (

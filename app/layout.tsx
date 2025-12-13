@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "StudioFlow | Next-Generation Production Platform",
   description:
     "Revolutionary cloud-native production platform with AI automation, real-time collaboration, and enterprise-grade version control for all media creation workflows",
-    generator: 'v0.app'
+  generator: 'v0.app'
 }
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body className={inter.className}>{children}</body>
       </html>
     </ClerkProvider>

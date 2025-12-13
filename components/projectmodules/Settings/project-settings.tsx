@@ -14,9 +14,11 @@ import {
     Save
 } from "lucide-react"
 
+import { type Project } from "../../../lib/db"
+
 interface ProjectSettingsProps {
-    currentProject: any
-    onUpdateProject?: (project: any, updates: any) => void
+    currentProject: Project | null
+    onUpdateProject?: (project: Project, updates: Partial<Project>) => void
 }
 
 interface BackgroundOption {
@@ -169,7 +171,7 @@ export default function ProjectSettings({ currentProject, onUpdateProject }: Pro
                         <label className="block text-white/70 text-sm mb-2">Status</label>
                         <select
                             value={projectStatus}
-                            onChange={(e) => setProjectStatus(e.target.value)}
+                            onChange={(e) => setProjectStatus(e.target.value as Project['status'])}
                             className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
                         >
                             <option value="development">Development</option>
