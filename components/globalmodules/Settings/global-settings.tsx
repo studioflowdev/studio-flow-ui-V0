@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
     Settings,
     Keyboard,
@@ -122,6 +122,22 @@ export default function GlobalSettings({ onNavigateToProject, onCreateProject }:
         { id: "account", label: "Account", icon: User },
     ]
 
+    const [showMockData, setShowMockData] = useState(true)
+
+    useEffect(() => {
+        const stored = localStorage.getItem("studio_flow_show_mock_data")
+        if (stored !== null) {
+            setShowMockData(JSON.parse(stored))
+        }
+    }, [])
+
+    const toggleMockData = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.checked
+        setShowMockData(newValue)
+        localStorage.setItem("studio_flow_show_mock_data", JSON.stringify(newValue))
+        window.dispatchEvent(new Event("studio_flow_settings_change"))
+    }
+
     // Helper functions (simplified from original for brevity, but retaining logic)
     const renderGeneralSettings = () => (
         <div className="space-y-6">
@@ -138,7 +154,25 @@ export default function GlobalSettings({ onNavigateToProject, onCreateProject }:
                             <div className="w-11 h-6 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                         </label>
                     </div>
-                    {/* ... other general settings */}
+
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h4 className="text-white font-medium">Show Mock Data</h4>
+                                <span className="bg-purple-500/20 text-purple-300 text-[10px] px-2 py-0.5 rounded border border-purple-500/30">DEV</span>
+                            </div>
+                            <p className="text-white/70 text-sm">Enable sample data for Contacts and other modules</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={showMockData}
+                                onChange={toggleMockData}
+                            />
+                            <div className="w-11 h-6 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>

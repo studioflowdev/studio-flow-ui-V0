@@ -91,6 +91,7 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
   const [showZeroRows, setShowZeroRows] = useState<Set<string>>(new Set())
   const [aiPrompt, setAiPrompt] = useState("")
   const [isGeneratingEstimates, setIsGeneratingEstimates] = useState(false)
+  const [isAiSuggestionsCollapsed, setIsAiSuggestionsCollapsed] = useState(true)
 
   // Recalculate category totals based on line items
   const recalculateCategory = (category: BudgetCategory): BudgetCategory => {
@@ -845,6 +846,78 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
     )
   }
 
+  // Render Summary View (Top Sheet)
+  const renderSummary = () => {
+    const totalEst = budgetData.reduce((sum, cat) => sum + cat.estimatedTotal, 0)
+    const totalAct = budgetData.reduce((sum, cat) => sum + cat.actualTotal, 0)
+    const totalVar = totalAct - totalEst
+    const totalVarPercent = totalEst > 0 ? (totalVar / totalEst) * 100 : 0
+
+    return (
+      <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white">Summary of Estimated Production Costs</h2>
+            <div className="text-right">
+              <p className="text-sm text-white/60">Grand Total Estimated</p>
+              <p className="text-2xl font-bold text-white">${totalEst.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-white/5">
+              <tr>
+                <th className="px-6 py-4 text-left text-white/70 text-sm font-medium">Account</th>
+                <th className="px-6 py-4 text-left text-white/70 text-sm font-medium">Category Description</th>
+                <th className="px-6 py-4 text-right text-white/70 text-sm font-medium">Estimated</th>
+                <th className="px-6 py-4 text-right text-white/70 text-sm font-medium">Actual</th>
+                <th className="px-6 py-4 text-right text-white/70 text-sm font-medium">Variance</th>
+                <th className="px-6 py-4 text-right text-white/70 text-sm font-medium">Var %</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              {budgetData.map((category) => (
+                <tr key={category.id} className="hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4 text-white font-medium">{category.code}</td>
+                  <td className="px-6 py-4 text-white font-medium">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg ${category.color} flex items-center justify-center opacity-80`}>
+                        <category.icon className="h-4 w-4 text-white" />
+                      </div>
+                      {category.name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right text-white font-mono">${category.estimatedTotal.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right text-white font-mono">${category.actualTotal.toLocaleString()}</td>
+                  <td className={`px-6 py-4 text-right font-mono font-medium ${category.variance >= 0 ? "text-red-400" : "text-green-400"}`}>
+                    {category.variance >= 0 ? "+" : ""}${category.variance.toLocaleString()}
+                  </td>
+                  <td className={`px-6 py-4 text-right font-mono text-sm ${category.variancePercent > 0 ? "text-red-400" : "text-green-400"}`}>
+                    {category.variancePercent.toFixed(1)}%
+                  </td>
+                </tr>
+              ))}
+              {/* Grand Total Row */}
+              <tr className="bg-white/10 font-bold">
+                <td className="px-6 py-4 text-white"></td>
+                <td className="px-6 py-4 text-white uppercase tracking-wider">Total Production Costs</td>
+                <td className="px-6 py-4 text-right text-white font-mono text-lg">${totalEst.toLocaleString()}</td>
+                <td className="px-6 py-4 text-right text-white font-mono text-lg">${totalAct.toLocaleString()}</td>
+                <td className={`px-6 py-4 text-right font-mono text-lg ${totalVar >= 0 ? "text-red-400" : "text-green-400"}`}>
+                  {totalVar >= 0 ? "+" : ""}${totalVar.toLocaleString()}
+                </td>
+                <td className={`px-6 py-4 text-right font-mono text-lg ${totalVarPercent > 0 ? "text-red-400" : "text-green-400"}`}>
+                  {totalVarPercent.toFixed(1)}%
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -859,15 +932,15 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
             className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg transition-all duration-300"
           >
             <Brain className="h-4 w-4" />
-            AI Budget Assistant
+            AI Budget Assistant(mock)
           </button>
           <button className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
             <Download className="h-4 w-4" />
-            Export
+            Export(mock)
           </button>
           <button className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
             <Upload className="h-4 w-4" />
-            Import
+            Import(mock)
           </button>
         </div>
       </div>
@@ -905,7 +978,7 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
         <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
           <div className="flex items-center gap-2 mb-2">
             <Target className="h-5 w-5 text-purple-400" />
-            <span className="text-white/70 text-sm">Budget Health</span>
+            <span className="text-white/70 text-sm">Budget Health(mock)</span>
           </div>
           <p
             className={`font-bold text-2xl ${Math.abs(totals.variancePercent) < 5 ? "text-green-400" : Math.abs(totals.variancePercent) < 15 ? "text-yellow-400" : "text-red-400"}`}
@@ -920,41 +993,53 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
       </div>
 
       {/* AI Suggestions */}
+      {/* AI Suggestions */}
       {aiSuggestions.length > 0 && (
-        <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden">
+          <div
+            className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors"
+            onClick={() => setIsAiSuggestionsCollapsed(!isAiSuggestionsCollapsed)}
+          >
             <div className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-purple-400" />
-              <h2 className="text-lg font-semibold text-white">AI Budget Intelligence</h2>
+              <h2 className="text-lg font-semibold text-white">AI Budget Intelligence (mock)</h2>
             </div>
+            {isAiSuggestionsCollapsed ? (
+              <ChevronDown className="h-5 w-5 text-white/70" />
+            ) : (
+              <ChevronUp className="h-5 w-5 text-white/70" />
+            )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {aiSuggestions.slice(0, 4).map((suggestion, i) => (
-              <div key={i} className="bg-white/5 rounded-lg p-3 border border-white/10">
-                <div className="flex items-center gap-2 mb-2">
-                  {suggestion.type === "optimization" && <Sparkles className="h-4 w-4 text-blue-400" />}
-                  {suggestion.type === "alert" && <AlertTriangle className="h-4 w-4 text-red-400" />}
-                  {suggestion.type === "estimate" && <Calculator className="h-4 w-4 text-green-400" />}
-                  {suggestion.type === "comparison" && <BarChart3 className="h-4 w-4 text-purple-400" />}
-                  <h3 className="text-white font-medium text-sm">{suggestion.title}</h3>
-                  <span className="text-xs text-white/50">({suggestion.confidence}% confidence)</span>
+
+          {!isAiSuggestionsCollapsed && (
+            <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {aiSuggestions.slice(0, 4).map((suggestion, i) => (
+                <div key={i} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    {suggestion.type === "optimization" && <Sparkles className="h-4 w-4 text-blue-400" />}
+                    {suggestion.type === "alert" && <AlertTriangle className="h-4 w-4 text-red-400" />}
+                    {suggestion.type === "estimate" && <Calculator className="h-4 w-4 text-green-400" />}
+                    {suggestion.type === "comparison" && <BarChart3 className="h-4 w-4 text-purple-400" />}
+                    <h3 className="text-white font-medium text-sm">{suggestion.title}</h3>
+                    <span className="text-xs text-white/50">({suggestion.confidence}% confidence)</span>
+                  </div>
+                  <p className="text-white/70 text-xs mb-2">{suggestion.description}</p>
+                  <div className="flex items-center justify-between">
+                    {suggestion.estimatedSavings && (
+                      <span className="text-green-400 text-xs font-medium">
+                        Save: ${suggestion.estimatedSavings.toLocaleString()}
+                      </span>
+                    )}
+                    {suggestion.action && (
+                      <button className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs transition-colors">
+                        {suggestion.action}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <p className="text-white/70 text-xs mb-2">{suggestion.description}</p>
-                <div className="flex items-center justify-between">
-                  {suggestion.estimatedSavings && (
-                    <span className="text-green-400 text-xs font-medium">
-                      Save: ${suggestion.estimatedSavings.toLocaleString()}
-                    </span>
-                  )}
-                  {suggestion.action && (
-                    <button className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs transition-colors">
-                      {suggestion.action}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1014,133 +1099,143 @@ export default function BudgetModule({ searchQuery = "", projectId = "1" }: { se
         </div>
       </div>
 
-      {/* Budget Categories */}
-      <div className="space-y-4">
-        {filteredCategories.map((category) => {
-          const isExpanded = expandedCategories.has(category.id)
-          const variancePercent = category.estimatedTotal > 0 ? (category.variance / category.estimatedTotal) * 100 : 0
+      {/* Main Content */}
+      {viewMode === "summary" ? (
+        renderSummary()
+      ) : (
+        /* Detailed Budget Categories */
+        <div className="space-y-4">
+          {filteredCategories.map((category) => {
+            const isExpanded = expandedCategories.has(category.id)
+            const variancePercent = category.estimatedTotal > 0 ? (category.variance / category.estimatedTotal) * 100 : 0
 
-          return (
-            <div
-              key={category.id}
-              className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden"
-            >
-              {/* Category Header */}
+            return (
               <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors"
-                onClick={() => toggleCategory(category.id)}
+                key={category.id}
+                className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-lg ${category.color} flex items-center justify-center`}>
-                    <category.icon className="h-6 w-6 text-white" />
+                {/* Category Header */}
+                <div
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                  onClick={() => toggleCategory(category.id)}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-lg ${category.color} flex items-center justify-center`}>
+                      <category.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold text-lg">
+                        {category.code}. {category.name}
+                      </h3>
+                      <p className="text-white/60 text-sm">{category.items.length} line items</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-white font-semibold text-lg">
-                      {category.code}. {category.name}
-                    </h3>
-                    <p className="text-white/60 text-sm">{category.items.length} line items</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
-                    <p className="text-white font-medium">${category.estimatedTotal.toLocaleString()}</p>
-                    <p className="text-white/60 text-sm">Estimated</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-white font-medium">${category.actualTotal.toLocaleString()}</p>
-                    <p className="text-white/60 text-sm">Actual</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-medium ${category.variance >= 0 ? "text-red-400" : "text-green-400"}`}>
-                      {category.variance >= 0 ? "+" : ""}${category.variance.toLocaleString()}
-                    </p>
-                    <p className="text-white/60 text-sm">({variancePercent.toFixed(1)}%)</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        addLineItem(category.id)
-                      }}
-                      className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                    >
-                      <Plus className="h-4 w-4 text-white/70" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleZeroRows(category.id)
-                      }}
-                      className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                      title={showZeroRows.has(category.id) ? "Hide empty rows" : "Show empty rows"}
-                    >
-                      {showZeroRows.has(category.id) ? (
-                        <Eye className="h-4 w-4 text-white/70" />
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-white font-medium">${category.estimatedTotal.toLocaleString()}</p>
+                      <p className="text-white/60 text-sm">Estimated</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white font-medium">${category.actualTotal.toLocaleString()}</p>
+                      <p className="text-white/60 text-sm">Actual</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-medium ${category.variance >= 0 ? "text-red-400" : "text-green-400"}`}>
+                        {category.variance >= 0 ? "+" : ""}${category.variance.toLocaleString()}
+                      </p>
+                      <p className="text-white/60 text-sm">({variancePercent.toFixed(1)}%)</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          addLineItem(category.id)
+                        }}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                      >
+                        <Plus className="h-4 w-4 text-white/70" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleZeroRows(category.id)
+                        }}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        title={showZeroRows.has(category.id) ? "Hide empty rows" : "Show empty rows"}
+                      >
+                        {showZeroRows.has(category.id) ? (
+                          <Eye className="h-4 w-4 text-white/70" />
+                        ) : (
+                          <EyeOff className="h-4 w-4 text-white/70" />
+                        )}
+                      </button>
+                      {isExpanded ? (
+                        <ChevronUp className="h-5 w-5 text-white/70" />
                       ) : (
-                        <EyeOff className="h-4 w-4 text-white/70" />
+                        <ChevronDown className="h-5 w-5 text-white/70" />
                       )}
-                    </button>
-                    {isExpanded ? (
-                      <ChevronUp className="h-5 w-5 text-white/70" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-white/70" />
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Category Items */}
-              {isExpanded && (
-                <div className="border-t border-white/10">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-white/5">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-white/70 text-sm font-medium">#</th>
-                          <th className="px-4 py-3 text-left text-white/70 text-sm font-medium">Description</th>
-                          <th className="px-4 py-3 text-center text-white/70 text-sm font-medium">Crew</th>
-                          <th className="px-4 py-3 text-center text-white/70 text-sm font-medium">Days</th>
-                          <th className="px-4 py-3 text-right text-white/70 text-sm font-medium">Rate</th>
-                          <th className="px-4 py-3 text-right text-white/70 text-sm font-medium">Estimated</th>
-                          <th className="px-4 py-3 text-right text-white/70 text-sm font-medium">Actual</th>
-                          <th className="px-4 py-3 text-right text-white/70 text-sm font-medium">Variance</th>
-                          <th className="px-4 py-3 text-center text-white/70 text-sm font-medium">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {category.items
-                          .filter((item) => {
-                            if (showZeroRows.has(category.id)) return true
-                            // Always show if editing this item
-                            if (editingItem === item.id) return true
-                            // Show if it has values or is new
-                            return (
-                              item.estimatedTotal > 0 ||
-                              item.actualTotal > 0 ||
-                              item.description === "New Line Item"
-                            )
-                          })
-                          .map((item) => renderLineItem(item, category.id))}
-                      </tbody>
-                    </table>
+                {/* Category Items */}
+                {isExpanded && (
+                  <div className="border-t border-white/10">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-white/5">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-white/70 text-sm font-medium">#</th>
+                            <th className="px-4 py-3 text-left text-white/70 text-sm font-medium">Description</th>
+                            <th className="px-4 py-3 text-center text-white/70 text-sm font-medium">Crew</th>
+                            <th className="px-4 py-3 text-center text-white/70 text-sm font-medium">Days</th>
+                            <th className="px-4 py-3 text-right text-white/70 text-sm font-medium">Rate</th>
+                            <th className="px-4 py-3 text-right text-white/70 text-sm font-medium">Estimated</th>
+                            <th className="px-4 py-3 text-right text-white/70 text-sm font-medium">Actual</th>
+                            <th className="px-4 py-3 text-right text-white/70 text-sm font-medium">Variance</th>
+                            <th className="px-4 py-3 text-center text-white/70 text-sm font-medium">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {category.items
+                            .filter((item) => {
+                              if (showZeroRows.has(category.id)) return true
+                              // Always show if editing this item
+                              if (editingItem === item.id) return true
+                              // Show if it has values or is new
+                              return (
+                                item.estimatedTotal > 0 ||
+                                item.actualTotal > 0 ||
+                                item.description === "New Line Item"
+                              )
+                            })
+                            .map((item) => renderLineItem(item, category.id))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* AI Assistant Modal */}
       {showAIAssistant && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* ... modal content ... */}
             <div className="p-6">
+              {/* Simplified modal content placeholder to keep file size manageable if needed, 
+                     but ideally we keep the original content. 
+                     Since I am replacing, I must include the original content or I will delete it.
+                     I will include the original content below. */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <Brain className="h-8 w-8 text-purple-400" />
                   <div>
-                    <h2 className="text-2xl font-bold text-white">AI Budget Assistant</h2>
+                    <h2 className="text-2xl font-bold text-white">AI Budget Assistant (mock)</h2>
                     <p className="text-white/70">Get intelligent budget estimates and optimization suggestions</p>
                   </div>
                 </div>
