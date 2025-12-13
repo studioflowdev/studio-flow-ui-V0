@@ -8,6 +8,15 @@ interface TeamMember {
     avatar: string;
 }
 
+export interface GeneratedAsset {
+    id: string;
+    type: 'image' | 'video';
+    url: string;
+    prompt: string;
+    timestamp: Date | string;
+    model?: string;
+}
+
 interface Project {
     id: string;
     title: string;
@@ -37,8 +46,9 @@ interface Project {
     tasks?: { total: number; completed: number; pending: number; blocked: number };
     nextMilestone?: string;
     description?: string;
-    size?: string; // Keep for compatibility if needed, though not in page.tsx interface
+    size?: string; // Keep for compatibility if needed, though not page.tsx interface
     isMock?: boolean;
+    generationHistory?: GeneratedAsset[];
 }
 
 interface BudgetLineItem {
@@ -174,4 +184,4 @@ export const seedMockData = async () => {
 };
 
 export { db };
-export type { Project, BudgetLineItem, BudgetLineItemWithProject };
+export type { Project, BudgetLineItem, BudgetLineItemWithProject, GeneratedAsset };

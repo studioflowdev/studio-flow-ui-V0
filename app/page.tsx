@@ -71,6 +71,7 @@ import AIGenerationSystem from "../components/ai-generation-system"
 import GlobalSettings from "../components/globalmodules/Settings/global-settings"
 import ProjectSettings from "../components/projectmodules/Settings/project-settings"
 import AssetManagement from "../components/projectmodules/Assets/asset-management"
+import ContentFlow from "../components/content-flow"
 import { useProjectActions } from "../components/hooks/useProjectActions"
 import { useLiveQuery } from "dexie-react-hooks"
 import { db, seedMockData, type Project } from "../lib/db"
@@ -140,6 +141,7 @@ export default function StudioFlowDashboard() {
   const [activeGenerations, setActiveGenerations] = useState<any[]>([])
   const [generationHistory, setGenerationHistory] = useState<any[]>([])
   const [showAIGenerationPanel, setShowAIGenerationPanel] = useState(false)
+  const [showContentFlow, setShowContentFlow] = useState(false)
 
   // Sample project data replaced with live query
   const projects = useLiveQuery(() => db.projects.toArray()) || []
@@ -1608,6 +1610,17 @@ export default function StudioFlowDashboard() {
             )}
           </div>
 
+          {/* Content Flow Tool - Context Aware Generator */}
+          <button
+            onClick={() => setShowContentFlow(!showContentFlow)}
+            className={`p-2 rounded-lg transition-colors group relative ${showContentFlow ? 'bg-white/20' : 'hover:bg-white/10'}`}
+            title="Content Flow (Gemini/Veo)"
+          >
+            <Sparkles className={`h-6 w-6 transition-colors ${showContentFlow ? 'text-indigo-400' : 'text-white'}`} />
+            {/* Glow effect */}
+            <div className="absolute inset-0 rounded-lg ring-1 ring-inset ring-white/10 group-hover:ring-indigo-400/50 pointer-events-none" />
+          </button>
+
           <button
             onClick={() => handleSidebarNavigation("settings")}
             className="h-6 w-6 text-white drop-shadow-md cursor-pointer hover:text-blue-400 transition-colors"
@@ -1978,8 +1991,16 @@ export default function StudioFlowDashboard() {
                 </div>
               </div>
             </div>
+
           )
         }
+
+        {/* Content Flow Context Window */}
+        {showContentFlow && (
+          <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+            <ContentFlow onClose={() => setShowContentFlow(false)} projectId={currentProject?.id} />
+          </div>
+        )}
       </main >
     </div >
   )
