@@ -8,6 +8,26 @@ interface TeamMember {
     avatar: string;
 }
 
+export interface InputState {
+    sceneScript: string;
+    characterDetails: string;
+    visualStyle: string;
+    locationAssets: { id: string; base64: string; type: string; selected?: boolean }[];
+    characterAssets: { id: string; base64: string; type: string; selected?: boolean }[];
+    styleAssets: { id: string; base64: string; type: string; selected?: boolean }[];
+    generationMode: 'prompt' | 'direct';
+    aspectRatio: string;
+    selectedModel: string;
+    activeTab: 'image' | 'video';
+}
+
+export interface Preset {
+    id: string;
+    name: string;
+    inputs: InputState;
+    createdAt: Date;
+}
+
 export interface GeneratedAsset {
     id: string;
     type: 'image' | 'video';
@@ -15,6 +35,22 @@ export interface GeneratedAsset {
     prompt: string;
     timestamp: Date | string;
     model?: string;
+    inputs?: InputState;  // Snapshot of inputs for recall
+}
+
+export interface ProjectAsset {
+    id: string;
+    name: string;
+    type: "image" | "video" | "audio" | "document" | "other";
+    url: string;
+    size: string;
+    dateAdded: string;
+    folderId: string;
+    prompt?: string;
+    model?: string;
+    source?: "uploaded" | "generated";
+    generationId?: string;
+    tags?: string[];
 }
 
 interface Project {
@@ -49,7 +85,35 @@ interface Project {
     size?: string; // Keep for compatibility if needed, though not page.tsx interface
     isMock?: boolean;
     generationHistory?: GeneratedAsset[];
+    presets?: Preset[];
+    assets?: ProjectAsset[];
+    folders?: AssetFolder[];
 }
+
+export interface AssetFolder {
+    id: string;
+    name: string;
+    parentId: string | null;
+    icon?: string;
+    color?: string;
+}
+
+export const DEFAULT_FOLDERS: AssetFolder[] = [
+    { id: "f_dev", name: "Development", parentId: null, icon: "Briefcase", color: "text-blue-400" },
+    { id: "f_pre", name: "Preproduction", parentId: null, icon: "ClipboardList", color: "text-indigo-400" },
+    { id: "f_vis", name: "PreVisualization", parentId: null, icon: "Eye", color: "text-purple-400" },
+    { id: "f_scr", name: "Scripts", parentId: null, icon: "FileText", color: "text-yellow-400" },
+    { id: "f_prod", name: "Production", parentId: null, icon: "Camera", color: "text-red-400" },
+    { id: "f_post", name: "Post-Production", parentId: null, icon: "MonitorPlay", color: "text-cyan-400" },
+    { id: "f_loc", name: "Locations", parentId: null, icon: "MapPin", color: "text-green-400" },
+    { id: "f_cast", name: "Characters/Cast", parentId: null, icon: "Users", color: "text-pink-400" },
+    { id: "f_foot", name: "Footage", parentId: null, icon: "Film", color: "text-orange-400" },
+    { id: "f_vfx", name: "VFX", parentId: null, icon: "Wand2", color: "text-fuchsia-400" },
+    { id: "f_gfx", name: "Graphics", parentId: null, icon: "Image", color: "text-teal-400" },
+    { id: "f_aud", name: "Audio", parentId: null, icon: "Mic", color: "text-emerald-400" },
+    { id: "f_scrn", name: "Screeners", parentId: null, icon: "Tv", color: "text-sky-400" },
+    { id: "f_del", name: "Deliveries", parentId: null, icon: "Package", color: "text-lime-400" },
+];
 
 interface BudgetLineItem {
     id: string;
@@ -89,7 +153,17 @@ db.version(2).stores({
 // Seed function to be called by components if DB is empty
 export const seedMockData = async () => {
     const count = await db.projects.count();
-    if (count > 0) return;
+
+    // Check if we need to migrate existing mocks (if they don't have folders)
+    if (count > 0) {
+        const mocks = await db.projects.where('id').anyOf(['1', '2', '3']).toArray();
+        for (const mock of mocks) {
+            if (!mock.folders || mock.folders.length === 0) {
+                await db.projects.update(mock.id, { folders: DEFAULT_FOLDERS });
+            }
+        }
+        return;
+    }
 
     const mockProjects: Project[] = [
         {
@@ -120,7 +194,8 @@ export const seedMockData = async () => {
             backgroundColor: "",
             calendars: ["cal_1", "cal_2"],
             isMock: true,
-            size: "1.2 GB"
+            size: "1.2 GB",
+            folders: DEFAULT_FOLDERS
         },
         {
             id: "2",
@@ -151,7 +226,8 @@ export const seedMockData = async () => {
             backgroundColor: "linear-gradient(to right, #243B55, #141E30)",
             calendars: [],
             isMock: true,
-            size: "450 MB"
+            size: "450 MB",
+            folders: DEFAULT_FOLDERS
         },
         {
             id: "3",
@@ -171,7 +247,8 @@ export const seedMockData = async () => {
             backgroundColor: "#f59e0b",
             description: "High energy tech commercial.",
             isMock: true,
-            size: "3.4 GB"
+            size: "3.4 GB",
+            folders: DEFAULT_FOLDERS
         },
     ];
 
@@ -184,4 +261,4 @@ export const seedMockData = async () => {
 };
 
 export { db };
-export type { Project, BudgetLineItem, BudgetLineItemWithProject, GeneratedAsset };
+export type { Project, BudgetLineItem, BudgetLineItemWithProject };

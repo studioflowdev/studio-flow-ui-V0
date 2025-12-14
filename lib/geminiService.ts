@@ -16,6 +16,7 @@ export interface GenerationRequest {
     styleReference?: string;
     model?: string;
     sourceImage?: string; // Base64 for Image-to-Image refinement
+    contentParts?: any[]; // For Direct Mode
 }
 
 export const geminiService = {
@@ -56,6 +57,15 @@ export const geminiService = {
         }
     ): Promise<{ technical_prompt: string; reasoning: string }> {
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+        // LOGGING FOR VERIFICATION
+        console.group("🎨 ContentFlow Prompt Inputs");
+        console.log("Script:", inputs.script || "N/A");
+        console.log("Character Details:", inputs.characterDetails || "N/A");
+        console.log("Location Details:", inputs.locationDetails || "N/A");
+        console.log("Visual Style:", inputs.visualStyle || "N/A");
+        console.log("Asset Analysis:", inputs.assetDescriptions);
+        console.groupEnd();
 
         const prompt = `
       You are a Creative Production Co-Pilot. Your goal is to create a hig-fidelity technical prompt for an AI media generator (like Imagen 3 or Veo).
@@ -105,25 +115,46 @@ export const geminiService = {
         if (request.type === 'image') {
             try {
                 console.log(`[Real Gen] Generating image with ${modelId}`);
-                console.log(`[Real Gen] Prompt: ${request.prompt}`);
 
-                const parts: any[] = [{ text: request.prompt + ` --ar ${request.aspectRatio}` }];
+                let parts: any[] = [];
 
-                // Image-to-Image Refinement
-                if (request.sourceImage) {
-                    console.log("[Real Gen] Mode: Image-to-Image Refinement");
-                    const base64Image = request.sourceImage.includes(',')
-                        ? request.sourceImage.split(',')[1]
-                        : request.sourceImage;
-
-                    parts.push({
-                        inlineData: {
-                            data: base64Image,
-                            mimeType: "image/png"
+                if (request.contentParts && request.contentParts.length > 0) {
+                    // Direct Mode: Use provided parts
+                    console.log("🎨 Direct Mode Input Structure:");
+                    request.contentParts.forEach((part, index) => {
+                        if (part.text) {
+                            console.log(`  [Part ${index}] Text: "${part.text.substring(0, 100)}${part.text.length > 100 ? '...' : ''}"`);
+                        } else if (part.inlineData) {
+                            console.log(`  [Part ${index}] Image: ${part.inlineData.mimeType} (Base64 Length: ${part.inlineData.data.length})`);
+                        } else {
+                            console.log(`  [Part ${index}] Unknown Type:`, part);
                         }
                     });
+
+                    parts = request.contentParts;
+                    // Append AR if text part exists, or just append as new text part
+                    parts.push({ text: ` --ar ${request.aspectRatio}` });
                 } else {
-                    console.log("[Real Gen] Mode: Text-to-Image");
+                    // Prompt Mode: Standard Text (+ optional Refine Image)
+                    console.log(`[Real Gen] Prompt: ${request.prompt}`);
+                    parts = [{ text: request.prompt + ` --ar ${request.aspectRatio}` }];
+
+                    // Image-to-Image Refinement
+                    if (request.sourceImage) {
+                        console.log("[Real Gen] Mode: Image-to-Image Refinement");
+                        const base64Image = request.sourceImage.includes(',')
+                            ? request.sourceImage.split(',')[1]
+                            : request.sourceImage;
+
+                        parts.push({
+                            inlineData: {
+                                data: base64Image,
+                                mimeType: "image/png"
+                            }
+                        });
+                    } else {
+                        console.log("[Real Gen] Mode: Text-to-Image");
+                    }
                 }
 
                 const result = await model.generateContent({

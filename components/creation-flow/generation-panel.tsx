@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Download, Save, Share2, MessageSquare, Loader2, PlayCircle, History, Maximize2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Download, Save, Share2, MessageSquare, Loader2, PlayCircle, History, Maximize2, Check, Trash2, ExternalLink } from 'lucide-react';
 import { GenerationRequest } from '../lib/geminiService';
 
 interface GeneratedResult {
@@ -8,7 +8,7 @@ interface GeneratedResult {
     type: 'image' | 'video';
     url: string; // or base64
     prompt: string;
-    timestamp: Date;
+    timestamp: Date | string;
 }
 
 interface GenerationPanelProps {
@@ -17,19 +17,43 @@ interface GenerationPanelProps {
     history: GeneratedResult[];
     onRefine: (feedback: string) => void;
     onSelectHistory: (item: GeneratedResult) => void;
+    onSave: (item: GeneratedResult) => Promise<boolean>;
+    onDelete: (item: GeneratedResult) => void;
+    onNavigateToAssets?: () => void;
+    selectedModel?: string;
+    error?: string | null;
 }
 
 
-export function GenerationPanel({ isLoading, currentResult, history, onRefine, onSelectHistory, onSave, selectedModel = "Model", error }: GenerationPanelProps & { onSave: (item: GeneratedResult) => void, selectedModel?: string, error?: string | null }) {
+export function GenerationPanel({ isLoading, currentResult, history, onRefine, onSelectHistory, onSave, onDelete, onNavigateToAssets, selectedModel = "Model", error }: GenerationPanelProps) {
     const [refinementText, setRefinementText] = useState("");
     const [isMaximized, setIsMaximized] = useState(false);
     const [showPrompt, setShowPrompt] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+    const [showSaveDialog, setShowSaveDialog] = useState(false);
+
+    // Reset saved state when showing a new result
+    useEffect(() => {
+        setIsSaved(false);
+        setShowSaveDialog(false);
+    }, [currentResult?.id]);
 
     const handleRefineSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (refinementText.trim()) {
             onRefine(refinementText);
             setRefinementText("");
+        }
+    };
+
+    const handleSaveClick = async () => {
+        if (!currentResult) return;
+        const success = await onSave(currentResult);
+        if (success) {
+            setIsSaved(true);
+            setShowSaveDialog(true);
+            // Auto hide after 5 seconds if not interacted
+            setTimeout(() => setShowSaveDialog(false), 5000);
         }
     };
 
@@ -48,7 +72,6 @@ export function GenerationPanel({ isLoading, currentResult, history, onRefine, o
             document.body.removeChild(a);
         } catch (e) {
             console.error("Download failed:", e);
-            // Fallback for direct link
             window.open(currentResult.url, '_blank');
         }
     };
@@ -64,12 +87,40 @@ export function GenerationPanel({ isLoading, currentResult, history, onRefine, o
                     onClick={() => setIsMaximized(false)}
                     className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
                 >
-                    <Maximize2 className="h-6 w-6 transform rotate-180" /> {/* simple close/shrink icon placeholder */}
+                    <Maximize2 className="h-6 w-6 transform rotate-180" />
                 </button>
             )}
 
             {/* Main Display Area */}
             <div className={`flex-1 relative bg-black/40 flex items-center justify-center min-h-[300px] ${isMaximized ? 'h-[80vh]' : ''}`}>
+
+                {/* Save Confirmation Dialog */}
+                {showSaveDialog && (
+                    <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-[#1e293b] border border-green-500/30 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="bg-green-500/20 p-2 rounded-full">
+                            <Check className="h-4 w-4 text-green-400" />
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-sm">Saved to Assets</h4>
+                            <p className="text-xs text-white/50">Media is now safe in your project.</p>
+                        </div>
+                        {onNavigateToAssets && (
+                            <button
+                                onClick={onNavigateToAssets}
+                                className="ml-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5"
+                            >
+                                View
+                                <ExternalLink className="h-3 w-3" />
+                            </button>
+                        )}
+                        <button onClick={() => setShowSaveDialog(false)} className="ml-1 text-white/40 hover:text-white">
+                            <span className="sr-only">Close</span>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                )}
+
+
                 {isLoading ? (
                     <div className="flex flex-col items-center gap-3 text-purple-400">
                         <Loader2 className="h-8 w-8 animate-spin" />
@@ -93,25 +144,25 @@ export function GenerationPanel({ isLoading, currentResult, history, onRefine, o
                 ) : currentResult ? (
                     <div className="relative w-full h-full group flex flex-col">
                         {/* Media Container */}
-                        <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+                        <div className="flex-1 relative flex items-center justify-center overflow-hidden p-8">
                             {currentResult.type === 'video' ? (
                                 <video
                                     src={currentResult.url}
                                     controls
                                     autoPlay
                                     loop
-                                    className="max-w-full max-h-full object-contain shadow-2xl"
+                                    className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
                                 />
                             ) : (
                                 <img
                                     src={currentResult.url}
                                     alt={currentResult.prompt}
-                                    className="max-w-full max-h-full object-contain shadow-2xl"
+                                    className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
                                 />
                             )}
                         </div>
 
-                        {/* Overlay Actions - Always visible on hover or persistent if useful */}
+                        {/* Overlay Actions */}
                         <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
                             <button
                                 onClick={handleDownload}
@@ -121,11 +172,20 @@ export function GenerationPanel({ isLoading, currentResult, history, onRefine, o
                                 <Download className="h-4 w-4" />
                             </button>
                             <button
-                                onClick={() => onSave(currentResult)}
-                                className="p-2 bg-black/60 hover:bg-black/80 text-white rounded-lg backdrop-blur-md transition-colors border border-white/10 shadow-lg"
-                                title="Save to Assets"
+                                onClick={handleSaveClick}
+                                className={`p-2 rounded-lg backdrop-blur-md transition-colors border shadow-lg ${isSaved
+                                    ? 'bg-green-500/20 text-green-400 border-green-500/50 hover:bg-green-500/30'
+                                    : 'bg-black/60 text-white border-white/10 hover:bg-black/80'}`}
+                                title={isSaved ? "Saved" : "Save to Assets"}
                             >
-                                <Save className="h-4 w-4" />
+                                {isSaved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                            </button>
+                            <button
+                                onClick={() => onDelete(currentResult)}
+                                className="p-2 bg-black/60 hover:bg-red-900/80 text-white rounded-lg backdrop-blur-md transition-colors border border-white/10 shadow-lg group/trash"
+                                title="Delete"
+                            >
+                                <Trash2 className="h-4 w-4 group-hover/trash:text-red-400" />
                             </button>
                             <button
                                 onClick={() => setIsMaximized(!isMaximized)}
@@ -198,22 +258,33 @@ export function GenerationPanel({ isLoading, currentResult, history, onRefine, o
                     <div>
                         <div className="flex items-center gap-2 mb-2 text-xs text-white/50 uppercase tracking-wider font-medium">
                             <History className="h-3 w-3" />
-                            <span>Session History</span>
+                            <span>Project Generation History</span>
+                            <span className="ml-auto text-[10px] text-white/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                Right click to delete
+                            </span>
                         </div>
                         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-1">
                             {history.slice().reverse().map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => onSelectHistory(item)}
-                                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border transition-all ${currentResult?.id === item.id ? 'border-purple-500 ring-2 ring-purple-500/30' : 'border-white/10 hover:border-white/30'
-                                        }`}
-                                >
-                                    {item.type === 'video' ? (
-                                        <video src={item.url} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <img src={item.url} className="w-full h-full object-cover" />
-                                    )}
-                                </button>
+                                <div key={item.id} className="relative group/history-item flex-shrink-0">
+                                    <button
+                                        onClick={() => onSelectHistory(item)}
+                                        className={`relative w-16 h-16 rounded-lg overflow-hidden border transition-all ${currentResult?.id === item.id ? 'border-purple-500 ring-2 ring-purple-500/30' : 'border-white/10 hover:border-white/30'
+                                            }`}
+                                    >
+                                        {item.type === 'video' ? (
+                                            <video src={item.url} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <img src={item.url} className="w-full h-full object-cover" />
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onDelete(item); }}
+                                        className="absolute -top-1 -right-1 bg-red-500/80 hover:bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover/history-item:opacity-100 transition-opacity z-10"
+                                        title="Delete"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -222,3 +293,14 @@ export function GenerationPanel({ isLoading, currentResult, history, onRefine, o
         </div>
     );
 }
+
+// Helper X icon for history delete
+function X({ className }: { className?: string }) {
+    return (
+        <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    )
+}
+

@@ -67,14 +67,14 @@ import AnalyticsDashboard from "../components/projectmodules/Analytics/analytics
 import UserManagement from "../components/projectmodules/Users/user-management"
 import DailiesReviewModule from "../components/projectmodules/Dailies/dailies-review-module"
 import PostProductionTimeline from "../components/projectmodules/PostProduction/post-production-timeline"
-import AIGenerationSystem from "../components/ai-generation-system"
+import AIGenerationSystem from "../components/creation-flow/ai-generation-system"
 import GlobalSettings from "../components/globalmodules/Settings/global-settings"
 import ProjectSettings from "../components/projectmodules/Settings/project-settings"
 import AssetManagement from "../components/projectmodules/Assets/asset-management"
-import ContentFlow from "../components/content-flow"
+import ContentFlow from "../components/creation-flow/content-flow"
 import { useProjectActions } from "../components/hooks/useProjectActions"
 import { useLiveQuery } from "dexie-react-hooks"
-import { db, seedMockData, type Project } from "../lib/db"
+import { db, seedMockData, DEFAULT_FOLDERS, type Project } from "../lib/db"
 
 // Types for production data
 // Types are now imported from lib/db
@@ -1240,7 +1240,8 @@ export default function StudioFlowDashboard() {
       team: [],
       description: "A new project ready for development.",
       startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      folders: DEFAULT_FOLDERS
     }
 
     await db.projects.add(newProject)
@@ -1289,7 +1290,7 @@ export default function StudioFlowDashboard() {
           </button>
           <div className="flex items-center gap-3">
             <Film className="h-8 w-8 text-blue-400" />
-            <span className="text-2xl font-bold text-white drop-shadow-lg">StudioFlow v3</span>
+            <span className="text-2xl font-bold text-white drop-shadow-lg">StudioFlow v4</span>
           </div>
         </div>
 
@@ -1738,7 +1739,7 @@ export default function StudioFlowDashboard() {
             ) : (
               <>
                 {/* Project Settings - Above Budget */}
-                <div className="mb-6">
+                <div className="mb-1">
                   <div className="space-y-1">
                     <button
                       className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${currentView === "project-settings" ? "bg-white/20" : ""
@@ -1998,7 +1999,14 @@ export default function StudioFlowDashboard() {
         {/* Content Flow Context Window */}
         {showContentFlow && (
           <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
-            <ContentFlow onClose={() => setShowContentFlow(false)} projectId={currentProject?.id} />
+            <ContentFlow
+              onClose={() => setShowContentFlow(false)}
+              projectId={currentProject?.id}
+              onNavigateToAssets={() => {
+                setShowContentFlow(false);
+                handleSidebarNavigation("assets"); // Assuming 'assets' is the ID for AssetManagement
+              }}
+            />
           </div>
         )}
       </main >

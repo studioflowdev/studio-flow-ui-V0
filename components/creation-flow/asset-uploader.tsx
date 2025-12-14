@@ -1,6 +1,5 @@
-
 import React, { useRef } from 'react';
-import { Upload, X, Check, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Check, Image as ImageIcon, FolderOpen } from 'lucide-react';
 
 interface Asset {
     id: string;
@@ -14,10 +13,11 @@ interface AssetUploaderProps {
     onAdd: (files: FileList) => void;
     onRemove: (id: string) => void;
     onToggleSelection: (id: string) => void;
+    onSelectFromLibrary?: () => void;
     label?: string;
 }
 
-export function AssetUploader({ assets, onAdd, onRemove, onToggleSelection, label = "Reference Assets" }: AssetUploaderProps) {
+export function AssetUploader({ assets, onAdd, onRemove, onToggleSelection, onSelectFromLibrary, label = "Reference Assets" }: AssetUploaderProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,13 +32,24 @@ export function AssetUploader({ assets, onAdd, onRemove, onToggleSelection, labe
         <div className="space-y-2">
             <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-white/70 uppercase tracking-wider">{label}</label>
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                    <Upload className="h-3 w-3" />
-                    Upload
-                </button>
+                <div className="flex items-center gap-2">
+                    {onSelectFromLibrary && (
+                        <button
+                            onClick={onSelectFromLibrary}
+                            className="text-xs flex items-center gap-1 text-white/50 hover:text-white transition-colors"
+                        >
+                            <FolderOpen className="h-3 w-3" />
+                            Library
+                        </button>
+                    )}
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                        <Upload className="h-3 w-3" />
+                        Upload
+                    </button>
+                </div>
                 <input
                     type="file"
                     ref={fileInputRef}
