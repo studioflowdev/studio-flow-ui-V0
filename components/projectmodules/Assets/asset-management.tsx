@@ -85,26 +85,34 @@ export default function AssetManagement({ projectId }: AssetManagementProps) {
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0]
-            const newAsset: ProjectAsset = {
-                id: `asset_${Date.now()}`,
-                name: file.name,
-                type: file.type.startsWith("image") ? "image" : file.type.startsWith("video") ? "video" : file.type.startsWith("audio") ? "audio" : "document",
-                url: URL.createObjectURL(file), // Note: In real app this should be upload URL
-                size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-                dateAdded: new Date().toISOString().split("T")[0],
-                folderId: currentFolderId || "root", // Use "root" if no folder selected, assuming "root" is top level or handled by fallback
-                source: "uploaded"
+            const reader = new FileReader()
+
+            reader.onload = async (event) => {
+                const base64Url = event.target?.result as string
+
+                const newAsset: ProjectAsset = {
+                    id: `asset_${Date.now()}`,
+                    name: file.name,
+                    type: file.type.startsWith("image") ? "image" : file.type.startsWith("video") ? "video" : file.type.startsWith("audio") ? "audio" : "document",
+                    url: base64Url,
+                    size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+                    dateAdded: new Date().toISOString().split("T")[0],
+                    folderId: currentFolderId || "root",
+                    source: "uploaded"
+                }
+
+                if (projectId) {
+                    await db.transaction('rw', db.projects, async () => {
+                        const proj = await db.projects.get(projectId);
+                        if (proj) {
+                            const currentAssets = proj.assets || [];
+                            await db.projects.update(projectId, { assets: [...currentAssets, newAsset] });
+                        }
+                    });
+                }
             }
 
-            if (projectId) {
-                await db.transaction('rw', db.projects, async () => {
-                    const proj = await db.projects.get(projectId);
-                    if (proj) {
-                        const currentAssets = proj.assets || [];
-                        await db.projects.update(projectId, { assets: [...currentAssets, newAsset] });
-                    }
-                });
-            }
+            reader.readAsDataURL(file)
         }
         // Reset input
         if (fileInputRef.current) fileInputRef.current.value = "";

@@ -88,6 +88,22 @@ interface Project {
     tasks?: { total: number; completed: number; pending: number; blocked: number };
     nextMilestone?: string;
     description?: string;
+    // New Fields
+    platformType?: 'film' | 'tv' | 'commercial' | 'web';
+    summary?: string;
+    estimatedBudget?: number;
+    // Team
+    writer?: string;
+    // director already exists
+    dop?: string;
+    editor?: string;
+    agency?: string;
+    productionCompany?: string;
+    // producer already exists
+    executiveProducer?: string;
+    // Display
+    moduleVisibility?: Record<string, boolean>;
+
     size?: string; // Keep for compatibility if needed, though not page.tsx interface
     isMock?: boolean;
     generationHistory?: GeneratedAsset[];
@@ -196,7 +212,7 @@ export const seedMockData = async () => {
             thumbnail: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop",
             description: "A cyberpunk noir thriller set in 2089 Tokyo.",
             backgroundType: "image",
-            backgroundImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+            backgroundImage: "/backgrounds/mountain-peaks.jpg",
             backgroundColor: "",
             calendars: ["cal_1", "cal_2"],
             isMock: true,

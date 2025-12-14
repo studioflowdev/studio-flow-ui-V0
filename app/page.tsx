@@ -45,6 +45,7 @@ import {
   Folder, // Added Folder icon
   RefreshCw, // Added
 } from "lucide-react"
+import AppSidebar from "../components/layout/app-sidebar"
 import ScriptModule from "../components/projectmodules/Script/script-module"
 import ScheduleModule from "../components/projectmodules/Schedule/schedule-module"
 import CameraToCloudModule from "../components/projectmodules/Dailies/camera-to-cloud-module"
@@ -1289,8 +1290,15 @@ export default function StudioFlowDashboard() {
             <Menu className="h-6 w-6 text-white" />
           </button>
           <div className="flex items-center gap-3">
-            <Film className="h-8 w-8 text-blue-400" />
-            <span className="text-2xl font-bold text-white drop-shadow-lg">StudioFlow v4</span>
+            <Image
+              src="/download (13)2.png"
+              alt="StudioFlow Logo"
+              width={500}
+              height={60}
+              className="drop-shadow-lg object-contain h-6 w-auto"
+              priority
+            />
+            <span className="text-2xl font-bold text-white drop-shadow-lg">v4</span>
           </div>
         </div>
 
@@ -1638,174 +1646,20 @@ export default function StudioFlowDashboard() {
       {/* Main Content */}
       <main className="relative h-screen w-full pt-20 flex">
         {/* Enhanced Sidebar - Show on all tabs */}
-        <div
-          className={`${sidebarCollapsed ? "w-20" : "w-80"} h-full bg-white/10 backdrop-blur-lg shadow-xl border-r border-white/20 rounded-tr-3xl opacity-0 ${isLoaded ? "animate-fade-in" : ""} transition-all duration-300 overflow-y-auto scrollbar-hide flex-shrink-0`}
-          style={{ animationDelay: "0.4s" }}
-        >
-          <div className="p-4">
-            {/* Project Selector */}
-            {!sidebarCollapsed && currentProject && (
-              <div className="mb-6 relative">
-                <button
-                  onClick={() => setShowProjectDropdown(!showProjectDropdown)}
-                  className="w-full flex items-center justify-between gap-2 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white hover:bg-white/15 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                      {currentProject.title.charAt(0)}
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium text-sm">{currentProject.title}</div>
-                      <div className="text-xs text-white/70">{currentProject.status.replace("-", " ")}</div>
-                    </div>
-                  </div>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${showProjectDropdown ? "rotate-180" : ""}`} />
-                </button>
-
-                {/* Project Dropdown */}
-                {showProjectDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
-                    {projects.map((project) => (
-                      <button
-                        key={project.id}
-                        onClick={() => {
-                          setCurrentProject(project)
-                          setShowProjectDropdown(false)
-                        }}
-                        className="w-full flex items-center gap-3 p-3 text-left hover:bg-white/10 transition-colors first:rounded-t-lg last:rounded-b-lg"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                          {project.title.charAt(0)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-white font-medium text-sm">{project.title}</div>
-                          <div className="text-white/70 text-xs">{project.status.replace("-", " ")}</div>
-                        </div>
-                        {currentProject.id === project.id && <Check className="h-4 w-4 text-green-400" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!sidebarCollapsed && (
-              <button
-                className="mb-6 flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-3 text-white w-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 ai-glow"
-                onClick={() => handleSidebarNavigation("dashboard")}
-              >
-                <BarChart3 className="h-5 w-5" />
-                <span className="font-medium">Dashboard</span>
-              </button>
-            )}
-
-            {sidebarCollapsed ? (
-              <div className="space-y-4">
-                <button
-                  className="w-full p-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-all duration-300"
-                  onClick={() => handleSidebarNavigation("dashboard")}
-                >
-                  <BarChart3 className="h-6 w-6 mx-auto" />
-                </button>
-                <button
-                  className={`w-full p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${currentView === "budget-module" && headerView === "dashboard" ? "bg-white/20" : ""
-                    } status-indicator ${getModuleStatusColor(productionModules.find((m) => m.id === "budget-module")?.status || "active")}`}
-                  onClick={() => handleSidebarNavigation("budget-module")}
-                >
-                  <DollarSign className="h-6 w-6 text-white mx-auto" />
-                </button>
-                {[
-                  ...productionModules.filter((m) => m.id !== "budget-module"),
-                  ...workflowModules,
-                  ...creativeModules,
-                ].map((module) => (
-                  <button
-                    key={module.id}
-                    className={`w-full p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${currentView === module.id && headerView === "dashboard" ? "bg-white/20" : ""
-                      } status-indicator ${getModuleStatusColor(module.status)}`}
-                    onClick={() => handleSidebarNavigation(module.id)}
-                  >
-                    <module.icon className="h-6 w-6 text-white mx-auto" />
-                  </button>
-                ))}
-                <button
-                  className={`w-full p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${currentView === "project-settings" ? "bg-white/20" : ""
-                    }`}
-                  onClick={() => handleSidebarNavigation("project-settings")}
-                >
-                  <Settings className="h-6 w-6 text-white mx-auto" />
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* Project Settings - Above Budget */}
-                <div className="mb-1">
-                  <div className="space-y-1">
-                    <button
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${currentView === "project-settings" ? "bg-white/20" : ""
-                        }`}
-                      onClick={() => handleSidebarNavigation("project-settings")}
-                    >
-                      <Settings className="h-5 w-5 text-white" />
-                      <span className="text-white font-medium">Project Settings</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Budget Module - Above Pre-Production */}
-                <div className="mb-6">
-                  <div className="space-y-1">
-                    <button
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${currentView === "budget-module" && headerView === "dashboard" ? "bg-white/20" : ""
-                        }`}
-                      onClick={() => handleSidebarNavigation("budget-module")}
-                    >
-                      <div
-                        className={`status-indicator ${getModuleStatusColor(productionModules.find((m) => m.id === "budget-module")?.status || "active")}`}
-                      >
-                        <DollarSign className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-white font-medium">Budget</div>
-                        <div className="text-white/50 text-xs">
-                          {productionModules.find((m) => m.id === "budget-module")?.progress || 85}% •{" "}
-                          {productionModules.find((m) => m.id === "budget-module")?.lastUpdated || "30 min ago"}
-                        </div>
-                      </div>
-                      <div className="w-2 h-2 rounded-full bg-white/30">
-                        <div
-                          className="h-full rounded-full bg-blue-400 transition-all duration-300"
-                          style={{
-                            width: `${productionModules.find((m) => m.id === "budget-module")?.progress || 85}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {renderModuleList(
-                  productionModules.filter((m) => m.id !== "budget-module"),
-                  "Pre-Production",
-                )}
-                {renderModuleList(creativeModules, "Creative Assets")}
-
-                {/* Asset Management */}
-                <div className="mb-6">
-                  <h3 className="text-white/70 text-sm font-medium mb-3 uppercase tracking-wider">Assets</h3>
-                  <button
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 ${currentView === "assets" ? "bg-white/20" : ""
-                      }`}
-                    onClick={() => handleSidebarNavigation("assets")}
-                  >
-                    <Folder className="h-5 w-5 text-white" />
-                    <span className="text-white font-medium">Asset Manager</span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <AppSidebar
+          collapsed={sidebarCollapsed}
+          currentView={currentView}
+          headerView={headerView}
+          currentProject={currentProject}
+          projects={projects || []}
+          onNavigate={handleSidebarNavigation}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onProjectSelect={(project) => {
+            setCurrentProject(project)
+            setShowProjectDropdown(false)
+          }}
+          onHeaderViewChange={setHeaderView}
+        />
 
         {/* Main Content Area */}
         <div
@@ -1952,6 +1806,7 @@ export default function StudioFlowDashboard() {
                     setCurrentProject(updated)
                     await db.projects.put(updated)
                   }}
+                  onOpenContentFlow={() => setShowContentFlow(true)}
                 />
               ) : (
                 renderDashboard()

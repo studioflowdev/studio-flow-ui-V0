@@ -11,7 +11,10 @@ import {
     Upload,
     Check,
     RotateCcw,
-    Save
+    Save,
+    LayoutTemplate,
+    Eye,
+    EyeOff
 } from "lucide-react"
 
 import { type Project } from "../../../lib/db"
@@ -19,6 +22,7 @@ import { type Project } from "../../../lib/db"
 interface ProjectSettingsProps {
     currentProject: Project | null
     onUpdateProject?: (project: Project, updates: Partial<Project>) => void
+    onOpenContentFlow?: () => void
 }
 
 interface BackgroundOption {
@@ -30,58 +34,98 @@ interface BackgroundOption {
     isCustom?: boolean
 }
 
-export default function ProjectSettings({ currentProject, onUpdateProject }: ProjectSettingsProps) {
-    const [activeTab, setActiveTab] = useState<"general" | "background" | "team">("general")
+export default function ProjectSettings({ currentProject, onUpdateProject, onOpenContentFlow }: ProjectSettingsProps) {
+    const [activeTab, setActiveTab] = useState<"general" | "background" | "team" | "display">("general")
+
+    // General Tab State
     const [projectTitle, setProjectTitle] = useState(currentProject?.title || "")
     const [projectGenre, setProjectGenre] = useState(currentProject?.genre || "")
     const [projectStatus, setProjectStatus] = useState(currentProject?.status || "development")
+    const [platformType, setPlatformType] = useState<Project['platformType']>(currentProject?.platformType || "film")
+    const [summary, setSummary] = useState(currentProject?.summary || "")
+    const [estimatedBudget, setEstimatedBudget] = useState(currentProject?.estimatedBudget?.toString() || "")
+
+    // Team Tab State
+    const [writer, setWriter] = useState(currentProject?.writer || "")
+    const [director, setDirector] = useState(currentProject?.director || "")
+    const [dop, setDop] = useState(currentProject?.dop || "")
+    const [editor, setEditor] = useState(currentProject?.editor || "")
+    const [agency, setAgency] = useState(currentProject?.agency || "")
+    const [productionCompany, setProductionCompany] = useState(currentProject?.productionCompany || "")
+    const [producer, setProducer] = useState(currentProject?.producer || "")
+    const [executiveProducer, setExecutiveProducer] = useState(currentProject?.executiveProducer || "")
+
+    // Background/Display State
     const [selectedBackground, setSelectedBackground] = useState<string>("default")
+    // Module Visibility State
+    const [moduleVisibility, setModuleVisibility] = useState<Record<string, boolean>>(currentProject?.moduleVisibility || {})
+
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         if (currentProject) {
+            // General
             setProjectTitle(currentProject.title || "")
             setProjectGenre(currentProject.genre || "")
             setProjectStatus(currentProject.status || "development")
+            setPlatformType(currentProject.platformType || "film")
+            setSummary(currentProject.summary || "")
+            setEstimatedBudget(currentProject.estimatedBudget?.toString() || "")
+
+            // Team
+            setWriter(currentProject.writer || "")
+            setDirector(currentProject.director || "")
+            setDop(currentProject.dop || "")
+            setEditor(currentProject.editor || "")
+            setAgency(currentProject.agency || "")
+            setProductionCompany(currentProject.productionCompany || "")
+            setProducer(currentProject.producer || "")
+            setExecutiveProducer(currentProject.executiveProducer || "")
+
+            // Display
+            setModuleVisibility(currentProject.moduleVisibility || {})
+            // Try to match current background to an option ID if possible, otherwise just keep as is or default logic
         }
     }, [currentProject])
 
-    // Background options (simplified subset)
+    // Background options (4 images, 4 gradients)
     const backgroundOptions: BackgroundOption[] = [
-        {
-            id: "default",
-            name: "Studio Flow Default",
-            type: "image",
-            value: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-            thumbnail: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=300&auto=format&fit=crop",
-        },
+        // Images
         {
             id: "cinema",
             name: "Cinema Hall",
             type: "image",
-            value: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba",
-            thumbnail: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=300&auto=format&fit=crop",
+            value: "/backgrounds/cinema-hall.jpg",
+            thumbnail: "/backgrounds/cinema-hall.jpg",
+        },
+        {
+            id: "mountain",
+            name: "Mountain Peaks",
+            type: "image",
+            value: "/backgrounds/mountain-peaks.jpg",
+            thumbnail: "/backgrounds/mountain-peaks.jpg",
         },
         {
             id: "abstract-neon",
             name: "Abstract Neon",
             type: "image",
-            value: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b",
-            thumbnail: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=300&auto=format&fit=crop",
+            value: "/backgrounds/abstract-neon.jpg",
+            thumbnail: "/backgrounds/abstract-neon.jpg",
         },
         {
-            id: "studio-set",
-            name: "Film Set",
+            id: "noir-city",
+            name: "Noir City",
             type: "image",
-            value: "https://images.unsplash.com/photo-1598899134739-967d8d565e22",
-            thumbnail: "https://images.unsplash.com/photo-1598899134739-967d8d565e22?q=80&w=300&auto=format&fit=crop",
+            value: "/backgrounds/noir-city.jpg",
+            thumbnail: "/backgrounds/noir-city.jpg",
         },
+        // Gradients
         {
             id: "minimal-gradient",
             name: "Deep Ocean",
             type: "gradient",
             value: "linear-gradient(to right, #0f2027, #203a43, #2c5364)",
-            thumbnail: "/gradients/ocean.png", // Fallback will be handled or used as color
+            thumbnail: "",
             isCustom: false
         },
         {
@@ -108,20 +152,6 @@ export default function ProjectSettings({ currentProject, onUpdateProject }: Pro
             thumbnail: "",
             isCustom: false
         },
-        {
-            id: "noir-city",
-            name: "Noir City",
-            type: "image",
-            value: "https://images.unsplash.com/photo-1480796927426-f609979314bd",
-            thumbnail: "https://images.unsplash.com/photo-1480796927426-f609979314bd?q=80&w=300&auto=format&fit=crop",
-        },
-        {
-            id: "scifi-corridor",
-            name: "Sci-Fi Corridor",
-            type: "image",
-            value: "https://images.unsplash.com/photo-1535295972055-1c762f4483e5",
-            thumbnail: "https://images.unsplash.com/photo-1535295972055-1c762f4483e5?q=80&w=300&auto=format&fit=crop",
-        },
     ]
 
     const handleSaveGeneral = () => {
@@ -130,6 +160,24 @@ export default function ProjectSettings({ currentProject, onUpdateProject }: Pro
                 title: projectTitle,
                 genre: projectGenre,
                 status: projectStatus,
+                platformType,
+                summary,
+                estimatedBudget: parseFloat(estimatedBudget) || 0
+            })
+        }
+    }
+
+    const handleSaveTeam = () => {
+        if (onUpdateProject && currentProject) {
+            onUpdateProject(currentProject, {
+                writer,
+                director,
+                dop,
+                editor,
+                agency,
+                productionCompany,
+                producer,
+                executiveProducer
             })
         }
     }
@@ -138,8 +186,47 @@ export default function ProjectSettings({ currentProject, onUpdateProject }: Pro
         setSelectedBackground(bg.id)
         if (onUpdateProject && currentProject) {
             onUpdateProject(currentProject, {
-                backgroundImage: bg.value,
+                backgroundImage: bg.type === "image" ? bg.value : undefined,
+                backgroundColor: bg.type !== "image" ? bg.value : undefined,
                 backgroundType: bg.type
+            })
+        }
+    }
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (file) {
+            const reader = new FileReader()
+            reader.onload = (e) => {
+                const result = e.target?.result as string
+                if (result && onUpdateProject && currentProject) {
+                    onUpdateProject(currentProject, {
+                        backgroundImage: result,
+                        backgroundType: "image"
+                    })
+                    setSelectedBackground("custom-upload")
+                }
+            }
+            reader.readAsDataURL(file)
+        }
+    }
+
+    const handleGenerateClick = () => {
+        // Trigger ContentFlow via prop
+        if (onOpenContentFlow) {
+            onOpenContentFlow()
+        }
+    }
+
+    const handleToggleModule = (moduleId: string) => {
+        if (onUpdateProject && currentProject) {
+            const newVisibility = {
+                ...moduleVisibility,
+                [moduleId]: moduleVisibility[moduleId] === undefined ? false : !moduleVisibility[moduleId]
+            }
+            setModuleVisibility(newVisibility)
+            onUpdateProject(currentProject, {
+                moduleVisibility: newVisibility
             })
         }
     }
@@ -149,37 +236,76 @@ export default function ProjectSettings({ currentProject, onUpdateProject }: Pro
             <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Project Details</h3>
                 <div className="space-y-4 max-w-xl">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Project Title</label>
+                            <input
+                                type="text"
+                                value={projectTitle}
+                                onChange={(e) => setProjectTitle(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Status</label>
+                            <select
+                                value={projectStatus}
+                                onChange={(e) => setProjectStatus(e.target.value as Project['status'])}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="development">Development</option>
+                                <option value="pre-production">Pre-Production</option>
+                                <option value="production">Production</option>
+                                <option value="post-production">Post-Production</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Platform Type</label>
+                            <select
+                                value={platformType}
+                                onChange={(e) => setPlatformType(e.target.value as any)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="film">Film</option>
+                                <option value="tv">TV Series</option>
+                                <option value="commercial">Commercial</option>
+                                <option value="web">Web Series</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Genre</label>
+                            <input
+                                type="text"
+                                value={projectGenre}
+                                onChange={(e) => setProjectGenre(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+
                     <div>
-                        <label className="block text-white/70 text-sm mb-2">Project Title</label>
-                        <input
-                            type="text"
-                            value={projectTitle}
-                            onChange={(e) => setProjectTitle(e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
+                        <label className="block text-white/70 text-sm mb-2">Summary</label>
+                        <textarea
+                            value={summary}
+                            onChange={(e) => setSummary(e.target.value)}
+                            rows={4}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
                         />
                     </div>
+
                     <div>
-                        <label className="block text-white/70 text-sm mb-2">Genre</label>
+                        <label className="block text-white/70 text-sm mb-2">Estimated Budget ($)</label>
                         <input
-                            type="text"
-                            value={projectGenre}
-                            onChange={(e) => setProjectGenre(e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
+                            type="number"
+                            value={estimatedBudget}
+                            onChange={(e) => setEstimatedBudget(e.target.value)}
+                            placeholder="0.00"
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
                         />
-                    </div>
-                    <div>
-                        <label className="block text-white/70 text-sm mb-2">Status</label>
-                        <select
-                            value={projectStatus}
-                            onChange={(e) => setProjectStatus(e.target.value as Project['status'])}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
-                        >
-                            <option value="development">Development</option>
-                            <option value="pre-production">Pre-Production</option>
-                            <option value="production">Production</option>
-                            <option value="post-production">Post-Production</option>
-                            <option value="completed">Completed</option>
-                        </select>
                     </div>
 
                     <button
@@ -194,51 +320,228 @@ export default function ProjectSettings({ currentProject, onUpdateProject }: Pro
         </div>
     )
 
-    const renderBackgroundSettings = () => (
+    const renderTeamSettings = () => (
         <div className="space-y-6">
             <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Project Background</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
-                    {backgroundOptions.map((bg) => (
-                        <div
-                            key={bg.id}
-                            className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${selectedBackground === bg.id ? "border-blue-400" : "border-white/20 hover:border-white/40"
-                                }`}
-                            onClick={() => handleBackgroundChange(bg)}
-                        >
-                            <div className="aspect-video relative">
-                                {bg.type === "image" ? (
-                                    <img src={bg.thumbnail || "/placeholder.svg"} alt={bg.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full" style={{ background: bg.value }}></div>
-                                )}
-                                {selectedBackground === bg.id && (
-                                    <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                                        <Check className="h-6 w-6 text-white" />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="p-2">
-                                <p className="text-white text-xs font-medium truncate">{bg.name}</p>
-                            </div>
+                <h3 className="text-lg font-semibold text-white mb-4">Team Details</h3>
+                <div className="space-y-4 max-w-xl">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Writer(s)</label>
+                            <input
+                                type="text"
+                                value={writer}
+                                onChange={(e) => setWriter(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                                placeholder="Lastname, Firstname"
+                            />
                         </div>
-                    ))}
-                    {/* Upload placeholder */}
-                    <div
-                        className="aspect-video border-2 border-dashed border-white/40 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-white/60 hover:bg-white/5 transition-all"
-                    >
-                        <Upload className="h-6 w-6 text-white/70 mb-2" />
-                        <span className="text-white/70 text-xs">Upload Image</span>
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Director</label>
+                            <input
+                                type="text"
+                                value={director}
+                                onChange={(e) => setDirector(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Director of Photography</label>
+                            <input
+                                type="text"
+                                value={dop}
+                                onChange={(e) => setDop(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Editor</label>
+                            <input
+                                type="text"
+                                value={editor}
+                                onChange={(e) => setEditor(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Producer(s)</label>
+                            <input
+                                type="text"
+                                value={producer}
+                                onChange={(e) => setProducer(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Executive Producer(s)</label>
+                            <input
+                                type="text"
+                                value={executiveProducer}
+                                onChange={(e) => setExecutiveProducer(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Agency</label>
+                            <input
+                                type="text"
+                                value={agency}
+                                onChange={(e) => setAgency(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-white/70 text-sm mb-2">Production Company</label>
+                            <input
+                                type="text"
+                                value={productionCompany}
+                                onChange={(e) => setProductionCompany(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={handleSaveTeam}
+                        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors mt-4"
+                    >
+                        <Save className="h-4 w-4" />
+                        Save Changes
+                    </button>
                 </div>
             </div>
         </div>
     )
 
+    const renderDisplaySettings = () => {
+        // List of modules to toggle (excluding project-settings)
+        const modulesToToggle = [
+            { id: "budget-module", name: "Budget" },
+            { id: "script", name: "Script" },
+            { id: "schedule", name: "Schedule" },
+            { id: "storyboard", name: "Storyboard" },
+            { id: "previs", name: "Previs" },
+            { id: "cast", name: "Cast" },
+            { id: "locations", name: "Locations" },
+            { id: "gear", name: "Gear" },
+            { id: "crew", name: "Crew" },
+            { id: "legal", name: "Legal Docs" },
+            { id: "call-sheets", name: "Call Sheets" },
+            { id: "analytics", name: "Analytics" },
+            { id: "user-management", name: "User Management" },
+            { id: "dailies-review", name: "Dailies Review" },
+            { id: "post-timeline", name: "Post Timeline" },
+            { id: "dailies", name: "Dailies" },
+            { id: "moodboard", name: "Moodboard" },
+            { id: "audio", name: "Audio" },
+            { id: "vfx", name: "VFX Pipeline" },
+            { id: "assets", name: "Asset Manager" },
+        ]
+
+        return (
+            <div className="space-y-8">
+                {/* Compact Background Selection */}
+                <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">Project Background</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4">
+                        {backgroundOptions.map((bg) => (
+                            <div
+                                key={bg.id}
+                                className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all aspect-video ${selectedBackground === bg.id ? "border-blue-400" : "border-white/20 hover:border-white/40"
+                                    }`}
+                                onClick={() => handleBackgroundChange(bg)}
+                            >
+                                <div className="w-full h-full relative">
+                                    {bg.type === "image" ? (
+                                        <img src={bg.thumbnail || "/placeholder.svg"} alt={bg.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full" style={{ background: bg.value }}></div>
+                                    )}
+                                    {selectedBackground === bg.id && (
+                                        <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                                            <Check className="h-4 w-4 text-white" />
+                                        </div>
+                                    )}
+                                    <div className="absolute bottom-0 left-0 right-0 p-1 bg-black/60 text-[10px] text-white truncate px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {bg.name}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Upload Option */}
+                        <div
+                            className="aspect-video border-2 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-white/40 hover:bg-white/5 transition-all text-white/50 hover:text-white"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleFileUpload}
+                            />
+                            <Upload className="h-6 w-6 mb-2" />
+                            <span className="text-xs">Upload</span>
+                        </div>
+
+                        {/* Generate Option */}
+                        <div
+                            className="aspect-video border-2 border-dashed border-blue-500/30 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500/60 hover:bg-blue-500/10 transition-all text-blue-400"
+                            onClick={handleGenerateClick}
+                        >
+                            <div className="relative">
+                                <ImageIcon className="h-6 w-6 mb-2" />
+                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                            </div>
+                            <span className="text-xs text-center px-2">Generate Background</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-8">
+                    <h3 className="text-lg font-semibold text-white mb-4">Module Visibility</h3>
+                    <p className="text-white/60 text-sm mb-6">Toggle the visibility of modules in the sidebar for this project.</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {modulesToToggle.map((module) => {
+                            const isVisible = moduleVisibility[module.id] !== false // Default to true
+                            return (
+                                <div key={module.id} className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10">
+                                    <span className="text-white text-sm font-medium">{module.name}</span>
+                                    <button
+                                        onClick={() => handleToggleModule(module.id)}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#0f172a] ${isVisible ? 'bg-blue-600' : 'bg-gray-700'
+                                            }`}
+                                    >
+                                        <span
+                                            className={`${isVisible ? 'translate-x-6' : 'translate-x-1'
+                                                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                                        />
+                                    </button>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     const tabs = [
         { id: "general", label: "General", icon: Settings },
-        { id: "background", label: "Background", icon: ImageIcon },
         { id: "team", label: "Team", icon: Users },
+        { id: "display", label: "Display", icon: LayoutTemplate },
+        // { id: "background", label: "Background", icon: ImageIcon }, // Now part of Display
     ]
 
     if (!currentProject) {
@@ -268,8 +571,8 @@ export default function ProjectSettings({ currentProject, onUpdateProject }: Pro
             {/* Content */}
             <div className="flex-1 p-6 overflow-y-auto h-full">
                 {activeTab === "general" && renderGeneralSettings()}
-                {activeTab === "background" && renderBackgroundSettings()}
-                {activeTab === "team" && <div className="text-white">Team Management (Migrated)</div>}
+                {activeTab === "team" && renderTeamSettings()}
+                {activeTab === "display" && renderDisplaySettings()}
             </div>
         </div>
     )
