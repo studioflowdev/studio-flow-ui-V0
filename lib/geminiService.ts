@@ -1,5 +1,6 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -17,6 +18,12 @@ export interface GenerationRequest {
     model?: string;
     sourceImage?: string; // Base64 for Image-to-Image refinement
     contentParts?: any[]; // For Direct Mode
+    videoConfig?: {
+        durationSeconds: string;
+        resolution: string;
+        fps: string;
+        withAudio: boolean;
+    };
 }
 
 export const geminiService = {
@@ -190,10 +197,102 @@ export const geminiService = {
                 throw new Error(`[${modelId}] Generation Failed: ${e.message || e}`);
             }
         } else {
-            // VIDEO (Veo) - Placeholder
-            console.log("Generating video with prompt:", request.prompt);
-            await new Promise(r => setTimeout(r, 4000));
-            return "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+            // VIDEO (Veo) - Using @google/genai SDK (Official Veo Support)
+            console.group("🎬 Video Generation Request (Veo - @google/genai)");
+            console.log("Model:", modelId);
+            console.log("Prompt:", request.prompt);
+
+            const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+
+            // Construct Configuration
+            const config: any = {
+                numberOfVideos: 1,
+                resolution: request.videoConfig?.resolution === "1920x1080" ? "1080p" : "720p",
+                // fps: request.videoConfig?.fps // Note: SDK might not expose FPS directly in basic config yet, checking types usage
+            };
+
+            const payload: any = {
+                model: modelId,
+                config: config,
+                prompt: request.prompt
+            };
+
+            // Handle Image Input (Image-to-Video)
+            if (request.contentParts) {
+                const imagePart = request.contentParts.find(p => p.inlineData);
+                if (imagePart) {
+                    payload.image = {
+                        imageBytes: imagePart.inlineData.data,
+                        mimeType: imagePart.inlineData.mimeType || "image/png"
+                    };
+                    console.log("Attached Start Frame");
+                }
+            }
+
+            console.log("Payload:", JSON.stringify(payload, null, 2));
+            console.groupEnd();
+
+            try {
+                // 1. Initiate Generation
+                let operation = await ai.models.generateVideos(payload);
+                console.log('Video generation operation started:', operation);
+
+                // 2. Poll for Completion
+                // The @google/genai SDK provides helper or we loop checking done
+                while (!operation.done) {
+                    await new Promise((resolve) => setTimeout(resolve, 5000)); // 5s poll
+                    console.log('...Polling Veo Status...');
+                    operation = await ai.operations.getVideosOperation({ operation: operation });
+                }
+
+                // 3. Retrieve Result
+                if (operation?.response && operation.response.generatedVideos && operation.response.generatedVideos.length > 0) {
+                    const videos = operation.response.generatedVideos;
+                    const firstVideo = videos[0];
+                    if (!firstVideo?.video?.uri) {
+                        throw new Error('Generated video is missing a URI.');
+                    }
+
+                    const videoUri = firstVideo.video.uri;
+                    console.log('Video URI received:', videoUri);
+
+                    // Fetch the actual video bytes to return a playable blob/base64
+                    // Note: The URI is typically accessible with the API Key
+                    const res = await fetch(`${videoUri}&key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`);
+
+                    if (!res.ok) {
+                        throw new Error(`Failed to fetch video content: ${res.status} ${res.statusText}`);
+                    }
+
+                    const arrayBuffer = await res.arrayBuffer();
+                    const base64 = Buffer.from(arrayBuffer).toString('base64');
+                    return `data:video/mp4;base64,${base64}`;
+
+                } else if (operation.error) {
+                    // Specific API Error from LRO
+                    console.error('Veo Operation Failed with Error:', operation.error);
+                    const errorCode = operation.error.code || 'Unknown Code';
+                    const errorMessage = operation.error.message || 'Unknown Error';
+                    throw new Error(`Veo API Error (${errorCode}): ${errorMessage}`);
+                } else {
+                    // Completed but no result and no explicit error
+                    console.error('Operation completed nicely but returned no videos:', operation);
+                    throw new Error('Generation completed but no videos were returned. This often means the request was blocked by safety filters.');
+                }
+
+            } catch (error: any) {
+                console.error("Veo SDK Error:", error);
+
+                // Enhanced error formatting
+                let readableError = error.message || "Unknown error";
+
+                // If it's a 400 bad request, it usually has details in the response body which might be hidden in the error object
+                if (readableError.includes("400")) {
+                    readableError += " (Check if parameters like Resolution/Duration match the model's capabilities)";
+                }
+
+                throw new Error(`Veo Generation Failed: ${readableError}`);
+            }
         }
     }
 };

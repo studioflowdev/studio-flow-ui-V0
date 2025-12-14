@@ -19,6 +19,12 @@ export interface InputState {
     aspectRatio: string;
     selectedModel: string;
     activeTab: 'image' | 'video';
+    // Video Specifics
+    videoTask?: 'text-to-video' | 'image-to-video' | 'reference-to-video';
+    generateAudio?: boolean;
+    startFrame?: { id: string; base64: string; type: string; selected?: boolean }[];
+    endFrame?: { id: string; base64: string; type: string; selected?: boolean }[];
+    subjectReference?: { id: string; base64: string; type: string; selected?: boolean }[];
 }
 
 export interface Preset {

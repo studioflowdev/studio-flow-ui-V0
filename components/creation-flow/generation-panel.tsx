@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Save, Share2, MessageSquare, Loader2, PlayCircle, History, Maximize2, Check, Trash2, ExternalLink } from 'lucide-react';
 import { GenerationRequest } from '../lib/geminiService';
+import LoadingIndicator from './LoadingIndicator';
 
 interface GeneratedResult {
     id: string;
@@ -22,10 +23,11 @@ interface GenerationPanelProps {
     onNavigateToAssets?: () => void;
     selectedModel?: string;
     error?: string | null;
+    generationType?: 'image' | 'video';
 }
 
 
-export function GenerationPanel({ isLoading, currentResult, history, onRefine, onSelectHistory, onSave, onDelete, onNavigateToAssets, selectedModel = "Model", error }: GenerationPanelProps) {
+export function GenerationPanel({ isLoading, currentResult, history, onRefine, onSelectHistory, onSave, onDelete, onNavigateToAssets, selectedModel = "Model", error, generationType = 'video' }: GenerationPanelProps) {
     const [refinementText, setRefinementText] = useState("");
     const [isMaximized, setIsMaximized] = useState(false);
     const [showPrompt, setShowPrompt] = useState(false);
@@ -122,12 +124,10 @@ export function GenerationPanel({ isLoading, currentResult, history, onRefine, o
 
 
                 {isLoading ? (
-                    <div className="flex flex-col items-center gap-3 text-purple-400">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                        <span className="text-sm font-medium animate-pulse">
-                            {currentResult?.type === 'video' ? `Rendering Video (${selectedModel})...` : `Generating Image (${selectedModel})...`}
-                        </span>
-                    </div>
+                    <LoadingIndicator
+                        title={generationType === 'image' ? "Generating Your Image" : "Generating Your Video"}
+                        modelName={selectedModel}
+                    />
                 ) : error ? (
                     <div className="flex flex-col items-center gap-3 text-red-400 p-6 text-center">
                         <div className="bg-red-500/10 p-4 rounded-full">
@@ -263,7 +263,7 @@ export function GenerationPanel({ isLoading, currentResult, history, onRefine, o
                                 Right click to delete
                             </span>
                         </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-1">
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-1 w-full max-w-full">
                             {history.slice().reverse().map((item) => (
                                 <div key={item.id} className="relative group/history-item flex-shrink-0">
                                     <button

@@ -35,22 +35,71 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
     const [actionDetails, setActionDetails] = useState(""); // Not used in UI? Removing or keeping as hidden state? It was in refinePrompt inputs.
     const [visualStyle, setVisualStyle] = useState("");
 
+    // Video Generation State
+    const [videoTask, setVideoTask] = useState<'text-to-video' | 'image-to-video' | 'reference-to-video'>('text-to-video');
+    const [generateAudio, setGenerateAudio] = useState(false);
+    const [videoDuration, setVideoDuration] = useState("6");
+    const [videoResolution, setVideoResolution] = useState("1280x720");
+    const [videoFps, setVideoFps] = useState("24");
+
     // Split Assets State
     const [locationAssets, setLocationAssets] = useState<Asset[]>([]);
     const [characterAssets, setCharacterAssets] = useState<Asset[]>([]);
     const [styleAssets, setStyleAssets] = useState<Asset[]>([]);
 
+    // Video Specific Assets
+    const [startFrame, setStartFrame] = useState<Asset[]>([]);
+    const [endFrame, setEndFrame] = useState<Asset[]>([]);
+    const [subjectReference, setSubjectReference] = useState<Asset[]>([]);
+
     // Selector Modal State
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
-    const [selectorTarget, setSelectorTarget] = useState<'location' | 'character' | 'style' | null>(null);
+    const [selectorTarget, setSelectorTarget] = useState<'location' | 'character' | 'style' | 'startFrame' | 'endFrame' | 'subjectReference' | null>(null);
 
     // Generation
     const [isGenerating, setIsGenerating] = useState(false);
     const [currentResult, setCurrentResult] = useState<GeneratedAsset | null>(null);
 
+    // --- Effects ---
+    // Auto-switch model when tab changes to prevent using Image model for Video task
+    React.useEffect(() => {
+        if (activeTab === 'video') {
+            if (!selectedModel.includes('veo')) {
+                setSelectedModel('veo-3.1-generate-preview');
+            }
+        } else {
+            if (selectedModel.includes('veo')) {
+                setSelectedModel('Gemini 3 Pro Image (Nano-Banana Pro)');
+            }
+        }
+    }, [activeTab]);
+
+    // Enforce Model Constraints (Veo Specifics)
+    React.useEffect(() => {
+        if (activeTab !== 'video') return;
+
+        // Veo 3.0 only supports 8 seconds
+        if (selectedModel.includes('veo-3.0') && videoDuration !== '8') {
+            setVideoDuration('8');
+        }
+
+        // Veo 2.0 does not support audio
+        if (selectedModel.includes('veo-2.0') && generateAudio) {
+            setGenerateAudio(false);
+        }
+
+        // Veo 3.1: 1080p is only available for 8s duration (per docs)
+        if (selectedModel.includes('veo-3.1') && videoResolution === '1920x1080' && videoDuration !== '8') {
+            // If user selected 4s/6s, force 720p
+            setVideoResolution('1280x720');
+        }
+
+    }, [selectedModel, videoDuration, activeTab, generateAudio, videoResolution]);
+
+
     // --- Asset Handling Helpers ---
 
-    const handleAssetUpload = async (files: FileList, target: 'location' | 'character' | 'style') => {
+    const handleAssetUpload = async (files: FileList, target: 'location' | 'character' | 'style' | 'startFrame' | 'endFrame' | 'subjectReference') => {
         const newAssets = await Promise.all(Array.from(files).map(async (file) => {
             return new Promise<Asset>((resolve) => {
                 const reader = new FileReader();
@@ -69,12 +118,20 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
         if (target === 'location') setLocationAssets(prev => [...prev, ...newAssets]);
         if (target === 'character') setCharacterAssets(prev => [...prev, ...newAssets]);
         if (target === 'style') setStyleAssets(prev => [...prev, ...newAssets]);
+
+        // Video specific (limits handled in UI but good to enforce here if needed, keeping simple for now)
+        if (target === 'startFrame') setStartFrame(prev => [...prev, ...newAssets].slice(0, 1));
+        if (target === 'endFrame') setEndFrame(prev => [...prev, ...newAssets].slice(0, 1));
+        if (target === 'subjectReference') setSubjectReference(prev => [...prev, ...newAssets].slice(0, 3));
     };
 
-    const handleAssetRemove = (id: string, target: 'location' | 'character' | 'style') => {
+    const handleAssetRemove = (id: string, target: 'location' | 'character' | 'style' | 'startFrame' | 'endFrame' | 'subjectReference') => {
         if (target === 'location') setLocationAssets(prev => prev.filter(a => a.id !== id));
         if (target === 'character') setCharacterAssets(prev => prev.filter(a => a.id !== id));
         if (target === 'style') setStyleAssets(prev => prev.filter(a => a.id !== id));
+        if (target === 'startFrame') setStartFrame(prev => prev.filter(a => a.id !== id));
+        if (target === 'endFrame') setEndFrame(prev => prev.filter(a => a.id !== id));
+        if (target === 'subjectReference') setSubjectReference(prev => prev.filter(a => a.id !== id));
     };
 
     const handleAssetToggle = (id: string, target: 'location' | 'character' | 'style') => {
@@ -84,7 +141,7 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
         if (target === 'style') setStyleAssets(toggler);
     };
 
-    const openSelector = (target: 'location' | 'character' | 'style') => {
+    const openSelector = (target: 'location' | 'character' | 'style' | 'startFrame' | 'endFrame' | 'subjectReference') => {
         setSelectorTarget(target);
         setIsSelectorOpen(true);
     };
@@ -142,7 +199,12 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
             generationMode,
             aspectRatio,
             selectedModel,
-            activeTab
+            activeTab,
+            videoTask,
+            generateAudio,
+            startFrame: startFrame.map(a => ({ id: a.id, base64: a.base64, type: a.type, selected: a.selected })),
+            endFrame: endFrame.map(a => ({ id: a.id, base64: a.base64, type: a.type, selected: a.selected })),
+            subjectReference: subjectReference.map(a => ({ id: a.id, base64: a.base64, type: a.type, selected: a.selected }))
         };
     };
 
@@ -159,6 +221,12 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
         setAspectRatio(inputs.aspectRatio);
         setSelectedModel(inputs.selectedModel);
         setActiveTab(inputs.activeTab);
+
+        if (inputs.videoTask) setVideoTask(inputs.videoTask);
+        setGenerateAudio(inputs.generateAudio || false);
+        if (inputs.startFrame) setStartFrame(inputs.startFrame.map(a => ({ ...a, selected: true }))); // Always select recalled inputs
+        if (inputs.endFrame) setEndFrame(inputs.endFrame.map(a => ({ ...a, selected: true })));
+        if (inputs.subjectReference) setSubjectReference(inputs.subjectReference.map(a => ({ ...a, selected: true })));
     };
 
     const handleHistorySelect = (item: GeneratedAsset) => {
@@ -178,7 +246,69 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
             let technical_prompt = "";
             let url = "";
 
-            if (generationMode === 'direct') {
+            if (activeTab === 'video') {
+                // --- VIDEO GENERATION LOGIC ---
+                const parts: any[] = [];
+                let promptText = sceneScript;
+
+                // 1. Text Prompt
+                parts.push({ text: promptText });
+
+                // 2. Task Specific Assets
+                if (videoTask === 'image-to-video') {
+                    if (startFrame[0]) {
+                        const base64Data = startFrame[0].base64.split(',')[1];
+                        const mimeType = startFrame[0].base64.match(/data:([^;]+);/)?.[1] || "image/jpeg";
+                        parts.push({
+                            inlineData: {
+                                data: base64Data,
+                                mimeType: mimeType
+                            }
+                        });
+                        // Note: Real Veo API might expect specific labeling for start/end frames, 
+                        // but we'll pack them in order for now or use specific keys if service updated.
+                        // For now assuming the service will handle the parts.
+                    }
+                    if (endFrame[0]) {
+                        const base64Data = endFrame[0].base64.split(',')[1];
+                        const mimeType = endFrame[0].base64.match(/data:([^;]+);/)?.[1] || "image/jpeg";
+                        parts.push({
+                            inlineData: {
+                                data: base64Data,
+                                mimeType: mimeType
+                            }
+                        });
+                    }
+                } else if (videoTask === 'reference-to-video') {
+                    subjectReference.forEach(ref => {
+                        const base64Data = ref.base64.split(',')[1];
+                        const mimeType = ref.base64.match(/data:([^;]+);/)?.[1] || "image/jpeg";
+                        parts.push({
+                            inlineData: {
+                                data: base64Data,
+                                mimeType: mimeType
+                            }
+                        });
+                    });
+                }
+
+                technical_prompt = promptText;
+
+                url = await geminiService.generateMedia({
+                    type: 'video',
+                    prompt: technical_prompt,
+                    contentParts: parts,
+                    aspectRatio,
+                    model: selectedModel,
+                    videoConfig: {
+                        durationSeconds: videoDuration,
+                        resolution: videoResolution,
+                        fps: videoFps,
+                        withAudio: generateAudio
+                    }
+                });
+
+            } else if (generationMode === 'direct') {
                 // DIRECT MODE: Bundle raw inputs
                 const parts: any[] = [];
 
@@ -205,7 +335,7 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
                 technical_prompt = combinedText; // Use raw text as prompt for history
 
                 url = await geminiService.generateMedia({
-                    type: activeTab,
+                    type: 'image',
                     prompt: combinedText, // Fallback/Log
                     contentParts: parts,
                     aspectRatio,
@@ -246,7 +376,7 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
 
                 // Generate
                 url = await geminiService.generateMedia({
-                    type: activeTab,
+                    type: 'image',
                     prompt: technical_prompt,
                     aspectRatio,
                     model: selectedModel
@@ -400,22 +530,7 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
 
                 {/* Controls */}
                 <div className="flex items-center gap-3">
-                    <div className="flex bg-black/20 p-1 rounded-lg border border-white/10">
-                        <button
-                            onClick={() => setActiveTab('image')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-all ${activeTab === 'image' ? 'bg-white/10 text-white shadow-sm' : 'text-white/50 hover:text-white'}`}
-                        >
-                            <ImageIcon className="h-3 w-3" />
-                            Image
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('video')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-all ${activeTab === 'video' ? 'bg-white/10 text-white shadow-sm' : 'text-white/50 hover:text-white'}`}
-                        >
-                            <Video className="h-3 w-3" />
-                            Video
-                        </button>
-                    </div>
+
 
                     {onClose && (
                         <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
@@ -440,91 +555,254 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
                             onLoadPreset={loadInputState}
                         />
 
-                        {/* Scene Context */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-semibold text-white/90">Scene & Location</h3>
-                                <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white/50">Context</span>
+                        {/* ==================== IMAGE MODE INPUTS ==================== */}
+                        {activeTab === 'image' && (
+                            <>
+                                {/* Scene Context */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-semibold text-white/90">Scene & Location</h3>
+                                        <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white/50">Context</span>
+                                    </div>
+                                    <textarea
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 min-h-[80px]"
+                                        placeholder="Describe the scene setting, time of day, and location details..."
+                                        value={sceneScript}
+                                        onChange={(e) => setSceneScript(e.target.value)}
+                                    />
+                                    <AssetUploader
+                                        assets={locationAssets}
+                                        onAdd={(f) => handleAssetUpload(f, 'location')}
+                                        onRemove={(id) => handleAssetRemove(id, 'location')}
+                                        onToggleSelection={(id) => handleAssetToggle(id, 'location')}
+                                        onSelectFromLibrary={() => openSelector('location')}
+                                        label="Location Refs"
+                                    />
+                                </div>
+
+                                <div className="h-px bg-white/5" />
+
+                                {/* Character Context */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-semibold text-white/90">Characters</h3>
+                                    </div>
+                                    <textarea
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 min-h-[80px]"
+                                        placeholder="Character descriptions, clothing, emotions..."
+                                        value={characterDetails}
+                                        onChange={(e) => setCharacterDetails(e.target.value)}
+                                    />
+                                    <AssetUploader
+                                        assets={characterAssets}
+                                        onAdd={(f) => handleAssetUpload(f, 'character')}
+                                        onRemove={(id) => handleAssetRemove(id, 'character')}
+                                        onToggleSelection={(id) => handleAssetToggle(id, 'character')}
+                                        onSelectFromLibrary={() => openSelector('character')}
+                                        label="Character Refs"
+                                    />
+                                </div>
+                                <div className="h-px bg-white/5" />
+
+                                {/* Visual Style */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-semibold text-white/90">Visual Style</h3>
+                                    </div>
+                                    <textarea
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 min-h-[60px]"
+                                        placeholder="Cinematic style, lens type, color grading..."
+                                        value={visualStyle}
+                                        onChange={(e) => setVisualStyle(e.target.value)}
+                                    />
+                                    <AssetUploader
+                                        assets={styleAssets}
+                                        onAdd={(f) => handleAssetUpload(f, 'style')}
+                                        onRemove={(id) => handleAssetRemove(id, 'style')}
+                                        onToggleSelection={(id) => handleAssetToggle(id, 'style')}
+                                        onSelectFromLibrary={() => openSelector('style')}
+                                        label="Style Refs"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+
+                        {/* ==================== VIDEO MODE INPUTS ==================== */}
+                        {activeTab === 'video' && (
+                            <div className="space-y-6">
+                                {/* Task Selector */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-white/70 uppercase">Video Task</label>
+                                    <select
+                                        value={videoTask}
+                                        onChange={(e) => setVideoTask(e.target.value as any)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                                    >
+                                        <option value="text-to-video">Text-to-Video</option>
+                                        <option value="image-to-video">Image-to-Video</option>
+                                        <option value="reference-to-video">Reference-to-Video (Subject)</option>
+                                    </select>
+                                </div>
+
+                                {/* Common Prompt Input */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-white/70 uppercase">Prompt</label>
+                                    <textarea
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 min-h-[100px]"
+                                        placeholder="Describe the video you want to generate..."
+                                        value={sceneScript} // Reusing sceneScript as the main prompt for video
+                                        onChange={(e) => setSceneScript(e.target.value)}
+                                    />
+                                </div>
+
+                                {/* Image-to-Video Specifics */}
+                                {videoTask === 'image-to-video' && (
+                                    <div className="space-y-4">
+                                        <div className="p-3 bg-white/5 border border-white/10 rounded-lg space-y-3">
+                                            <h3 className="text-sm font-semibold text-white/90">Input Images</h3>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs text-white/50">Start Frame (Required)</label>
+                                                <AssetUploader
+                                                    assets={startFrame}
+                                                    onAdd={(f) => handleAssetUpload(f, 'startFrame')}
+                                                    onRemove={(id) => handleAssetRemove(id, 'startFrame')}
+                                                    onToggleSelection={(id) => { }} // No toggle needed for single/required
+                                                    onSelectFromLibrary={() => openSelector('startFrame')}
+                                                    label="Upload Start Frame"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs text-white/50">End Frame (Optional)</label>
+                                                <AssetUploader
+                                                    assets={endFrame}
+                                                    onAdd={(f) => handleAssetUpload(f, 'endFrame')}
+                                                    onRemove={(id) => handleAssetRemove(id, 'endFrame')}
+                                                    onToggleSelection={(id) => { }}
+                                                    onSelectFromLibrary={() => openSelector('endFrame')}
+                                                    label="Upload End Frame"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Reference-to-Video Specifics */}
+                                {videoTask === 'reference-to-video' && (
+                                    <div className="space-y-4">
+                                        <div className="p-3 bg-white/5 border border-white/10 rounded-lg space-y-3">
+                                            <h3 className="text-sm font-semibold text-white/90">Subject Reference</h3>
+                                            <p className="text-xs text-white/40">Upload images of the subject you want to animate (Max 3)</p>
+
+                                            <AssetUploader
+                                                assets={subjectReference}
+                                                onAdd={(f) => handleAssetUpload(f, 'subjectReference')}
+                                                onRemove={(id) => handleAssetRemove(id, 'subjectReference')}
+                                                onToggleSelection={(id) => { }}
+                                                onSelectFromLibrary={() => openSelector('subjectReference')}
+                                                label="Upload Subject"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                            <textarea
-                                className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 min-h-[80px]"
-                                placeholder="Describe the scene setting, time of day, and location details..."
-                                value={sceneScript}
-                                onChange={(e) => setSceneScript(e.target.value)}
-                            />
-                            <AssetUploader
-                                assets={locationAssets}
-                                onAdd={(f) => handleAssetUpload(f, 'location')}
-                                onRemove={(id) => handleAssetRemove(id, 'location')}
-                                onToggleSelection={(id) => handleAssetToggle(id, 'location')}
-                                onSelectFromLibrary={() => openSelector('location')}
-                                label="Location Refs"
-                            />
-                        </div>
-
-                        <div className="h-px bg-white/5" />
-
-                        {/* Character Context */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-semibold text-white/90">Characters</h3>
-                            </div>
-                            <textarea
-                                className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 min-h-[80px]"
-                                placeholder="Character descriptions, clothing, emotions..."
-                                value={characterDetails}
-                                onChange={(e) => setCharacterDetails(e.target.value)}
-                            />
-                            <AssetUploader
-                                assets={characterAssets}
-                                onAdd={(f) => handleAssetUpload(f, 'character')}
-                                onRemove={(id) => handleAssetRemove(id, 'character')}
-                                onToggleSelection={(id) => handleAssetToggle(id, 'character')}
-                                onSelectFromLibrary={() => openSelector('character')}
-                                label="Character Refs"
-                            />
-                        </div>
-                        <div className="h-px bg-white/5" />
-
-                        {/* Visual Style */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-semibold text-white/90">Visual Style</h3>
-                            </div>
-                            <textarea
-                                className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 min-h-[60px]"
-                                placeholder="Cinematic style, lens type, color grading..."
-                                value={visualStyle}
-                                onChange={(e) => setVisualStyle(e.target.value)}
-                            />
-                            <AssetUploader
-                                assets={styleAssets}
-                                onAdd={(f) => handleAssetUpload(f, 'style')}
-                                onRemove={(id) => handleAssetRemove(id, 'style')}
-                                onToggleSelection={(id) => handleAssetToggle(id, 'style')}
-                                onSelectFromLibrary={() => openSelector('style')}
-                                label="Style Refs"
-                            />
-                        </div>
-
+                        )}
 
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="sticky bottom-0 p-4 border-t border-white/10 bg-black/40 backdrop-blur-xl z-10 space-y-3">
-                        <div className="flex gap-2">
-                            <select
-                                value={generationMode}
-                                onChange={(e) => setGenerationMode(e.target.value as 'prompt' | 'direct')}
-                                className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                    <div className="sticky bottom-0 p-4 border-t border-white/10 bg-black/40 backdrop-blur-xl z-10 space-y-4">
+
+                        {/* Mode Switcher */}
+                        <div className="flex p-1 bg-white/5 rounded-xl border border-white/10">
+                            <button
+                                onClick={() => setActiveTab('image')}
+                                className={`flex-1 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all ${activeTab === 'image' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
                             >
-                                <option value="prompt">Prompt Mode (Smart)</option>
-                                <option value="direct">Direct Mode (Raw)</option>
-                            </select>
+                                <ImageIcon className="h-3.5 w-3.5" />
+                                Image Generation
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('video')}
+                                className={`flex-1 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all ${activeTab === 'video' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                            >
+                                <Video className="h-3.5 w-3.5" />
+                                Video Generation
+                            </button>
+                        </div>
+
+
+                        <div className="flex gap-2">
+                            {/* Image Mode Options */}
+                            {activeTab === 'image' && (
+                                <select
+                                    value={generationMode}
+                                    onChange={(e) => setGenerationMode(e.target.value as 'prompt' | 'direct')}
+                                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs text-white focus:outline-none flex-1"
+                                >
+                                    <option value="prompt">Prompt Mode (Smart)</option>
+                                    <option value="direct">Direct Mode (Raw)</option>
+                                </select>
+                            )}
+
+
+
+                            {/* Video Mode Options */}
+                            {activeTab === 'video' && (
+                                <>
+                                    {/* Audio Toggle */}
+                                    <button
+                                        onClick={() => setGenerateAudio(!generateAudio)}
+                                        disabled={selectedModel.includes('veo-2.0')}
+                                        className={`px-3 py-2 rounded-lg border text-xs font-medium flex items-center gap-2 transition-all ${selectedModel.includes('veo-2.0')
+                                            ? 'opacity-50 cursor-not-allowed bg-white/5 border-white/10 text-white/30'
+                                            : generateAudio
+                                                ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300'
+                                                : 'bg-white/5 border-white/10 text-white/50'
+                                            }`}
+                                        title={selectedModel.includes('veo-2.0') ? "Not available for Veo 2.0" : "Generate Audio"}
+                                    >
+                                        <Sparkles className="h-3 w-3" />
+                                        Audio
+                                    </button>
+
+                                    {/* Duration Selector */}
+                                    <select
+                                        value={videoDuration}
+                                        onChange={(e) => setVideoDuration(e.target.value)}
+                                        className="bg-white/10 border border-white/20 rounded-lg px-2 py-2 text-xs text-white focus:outline-none flex-1"
+                                    >
+                                        <option value="4" disabled={selectedModel.includes('veo-3.0')}>4 Seconds</option>
+                                        <option value="6" disabled={selectedModel.includes('veo-3.0')}>6 Seconds</option>
+                                        <option value="8">8 Seconds</option>
+                                    </select>
+
+                                    {/* Resolution Selector */}
+                                    <select
+                                        value={videoResolution}
+                                        onChange={(e) => setVideoResolution(e.target.value)}
+                                        className="bg-white/10 border border-white/20 rounded-lg px-2 py-2 text-xs text-white focus:outline-none flex-1"
+                                    >
+                                        <option value="1280x720">720p HD</option>
+                                        <option
+                                            value="1920x1080"
+                                            disabled={
+                                                selectedModel.includes('veo-2.0') ||
+                                                (selectedModel.includes('veo-3.1') && videoDuration !== '8')
+                                            }
+                                        >
+                                            1080p FHD {selectedModel.includes('veo-3.1') && videoDuration !== '8' ? '(Requires 8s)' : ''}
+                                        </option>
+                                    </select>
+                                </>
+                            )}
+
                             <select
                                 value={aspectRatio}
                                 onChange={(e) => setAspectRatio(e.target.value)}
-                                className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                                className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs text-white focus:outline-none flex-1"
                             >
                                 <option value="16:9">16:9 Cinematic</option>
                                 <option value="9:16">9:16 Social</option>
@@ -532,6 +810,7 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
                                 <option value="1:1">1:1 Square</option>
                             </select>
                         </div>
+
                         <button
                             onClick={handleGenerate}
                             disabled={isGenerating}
@@ -557,18 +836,30 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
                                 onChange={(e) => setSelectedModel(e.target.value)}
                                 className="bg-transparent border-none text-white/60 hover:text-white focus:outline-none cursor-pointer max-w-[200px]"
                             >
-                                <option value="Gemini 3 Pro Image (Nano-Banana Pro)">Gemini 3 Pro Image (Nano-Banana Pro)</option>
-                                <option value="Gemini 2.5 Flash Image">Gemini 2.5 Flash Image</option>
-                                <option value="Gemini 2.0 Flash Exp">Gemini 2.0 Flash Exp</option>
+                                {activeTab === 'image' ? (
+                                    <>
+                                        <option value="Gemini 3 Pro Image (Nano-Banana Pro)">Gemini 3 Pro Image (Nano-Banana Pro)</option>
+                                        <option value="Gemini 2.5 Flash Image">Gemini 2.5 Flash Image</option>
+                                        <option value="Gemini 2.0 Flash Exp">Gemini 2.0 Flash Exp</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="veo-3.1-generate-preview">Veo 3.1 Preview</option>
+                                        <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast Preview</option>
+                                        <option value="veo-3.0-generate-001">Veo 3.0 Generate</option>
+                                        <option value="veo-3.0-fast-generate-001">Veo 3.0 Fast Generate</option>
+                                        <option value="veo-2.0-generate-001">Veo 2.0 Generate</option>
+                                    </>
+                                )}
                             </select>
-                            <span className="ml-auto">Cost: ~0.04 Credits</span>
+                            <span className="ml-auto">Cost: ~0.0{activeTab === 'image' ? '4' : '8'} Credits</span>
                         </div>
                     </div>
 
                 </div>
 
                 {/* RIGHT OUTPUT PANEL */}
-                <div className="flex-1 p-6 bg-black/10">
+                <div className="flex-1 p-6 bg-black/10 min-w-0">
                     <GenerationPanel
                         isLoading={isGenerating}
                         currentResult={currentResult}
@@ -580,6 +871,7 @@ export default function ContentFlow({ onClose, projectId, onNavigateToAssets }: 
                         onNavigateToAssets={onNavigateToAssets}
                         selectedModel={selectedModel}
                         error={error}
+                        generationType={activeTab}
                     />
                 </div>
 
